@@ -1,7 +1,6 @@
 import type { Usuario } from '../types/auth';
 
-// Usuarios de prueba mientras el backend no está disponible.
-// Bórralos cuando conectes el login/registro real.
+// Usuarios de prueba
 export const USUARIOS_MOCK: Array<Usuario & { contrasena: string }> = [
   {
     id: 1,

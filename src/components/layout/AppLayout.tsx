@@ -8,8 +8,7 @@ interface ItemMenu {
   roles: Rol[];
 }
 
-// Refleja los 8 módulos del Capítulo 4. Las rutas sin pantalla todavía
-// quedan visibles en el menú a propósito, como recordatorio del alcance.
+
 const MENU: ItemMenu[] = [
   { etiqueta: 'Panel principal', ruta: '/dashboard', roles: ['ADMIN', 'PSICOLOGO', 'COORDINADOR'] },
   { etiqueta: 'Mi solicitud', ruta: '/mi-solicitud', roles: ['ESTUDIANTE'] },

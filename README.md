@@ -2,17 +2,11 @@
 
 React 19 + Vite + TypeScript + Tailwind.
 
-> **Nota sobre alcance:** el rol `ESTUDIANTE` y el auto-registro público no
-> están en los Capítulos 1/3/4 actuales de la tesis (ahí solo se definen
-> ADMIN, PSICOLOGO y COORDINADOR, creados por el administrador). Si esta
-> parte se queda en la versión final, hay que actualizar esos capítulos y
-> el modelo de roles del backend antes de la defensa.
-
 ## Cómo correrlo
 
 ```bash
 npm install
-cp .env.example .env
+cp .env.test .env
 npm run dev
 ```
 

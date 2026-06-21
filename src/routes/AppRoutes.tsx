@@ -36,7 +36,7 @@ export function AppRoutes() {
           </Route>
 
           {/*
-            Sprint 2+: agrega aquí /pacientes, /fichas, /citas, /sesiones,
+            agrega aquí /pacientes, /fichas, /citas, /sesiones,
             /reportes, /usuarios, /auditoria — cada una como <Route> dentro
             de este mismo <AppLayout/>. Para restringir por rol, envuelve la
             ruta en <PrivateRoute rolesPermitidos={['ADMIN','COORDINADOR']} />.

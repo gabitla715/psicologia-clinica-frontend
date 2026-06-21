@@ -6,7 +6,7 @@ import type { LoginCredenciales, RegistroDatos, SesionAuth, Usuario } from '../t
 // este servicio responde con datos simulados, guardados solo en memoria
 // (se pierden al recargar la página — es normal, es un mock).
 // Cuando el backend esté listo: VITE_USE_MOCK=false en .env, y el resto
-// de la app (componentes, rutas, contexto) no necesita tocarse.
+// de la app (componentes, rutas, contexto)
 const USAR_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
 // Copia mutable en memoria, para poder "registrar" usuarios nuevos en modo mock.
