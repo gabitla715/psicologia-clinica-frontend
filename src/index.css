@@ -8,6 +8,18 @@ body {
 
 @layer components {
   .campo-input {
-    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sage-600 focus:outline-none focus:ring-2 focus:ring-sage-200;
+    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-brand-800 to-brand-600
+      px-5 py-2.5 text-sm font-medium text-white shadow-sm transition
+      hover:from-brand-900 hover:to-brand-700
+      disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-slate-300 px-5 py-2.5
+      text-sm font-medium text-slate-700 transition hover:bg-slate-50;
   }
 }

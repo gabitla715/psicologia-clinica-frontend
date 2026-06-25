@@ -7,7 +7,7 @@ export function Unauthorized() {
       <h1 className="text-xl font-semibold text-slate-800">
         Tu rol no tiene permiso para ver esta sección
       </h1>
-      <Link to="/dashboard" className="mt-2 text-sm font-medium text-sage-700 hover:underline">
+      <Link to="/dashboard" className="mt-2 text-sm font-medium text-brand-700 hover:underline">
         Volver al panel principal
       </Link>
     </div>

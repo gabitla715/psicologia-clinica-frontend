@@ -42,7 +42,7 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <p className="text-xs font-medium uppercase tracking-wide text-sage-700">
+          <p className="text-xs font-medium uppercase tracking-wide text-brand-700">
             Universidad Central del Ecuador
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-800">
@@ -69,7 +69,7 @@ export function LoginPage() {
                 id="email"
                 type="email"
                 autoComplete="email"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sage-600 focus:outline-none focus:ring-2 focus:ring-sage-200"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
                 placeholder="nombre@uce.edu.ec"
                 {...register('email')}
               />
@@ -84,7 +84,7 @@ export function LoginPage() {
                 id="contrasena"
                 type="password"
                 autoComplete="current-password"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sage-600 focus:outline-none focus:ring-2 focus:ring-sage-200"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
                 placeholder="••••••••"
                 {...register('contrasena')}
               />
@@ -98,7 +98,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-60"
+              className="btn-primary w-full"
             >
               {isSubmitting ? 'Ingresando…' : 'Iniciar sesión'}
             </button>
@@ -108,14 +108,14 @@ export function LoginPage() {
             ¿No tienes cuenta?{' '}
             <Link
               to={`/registro${servicio ? `?servicio=${servicio}` : ''}`}
-              className="font-medium text-sage-700 hover:underline"
+              className="font-medium text-brand-700 hover:underline"
             >
               Regístrate aquí
             </Link>
           </p>
         </div>
 
-        <div className="mt-6 rounded-lg border border-sage-200 bg-sage-50 px-4 py-3 text-xs text-sage-800">
+        <div className="mt-6 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-xs text-brand-800">
           <p className="font-medium">Modo de prueba (datos simulados, sin backend)</p>
           <ul className="mt-1 space-y-0.5">
             <li>admin@uce.edu.ec / Admin123 — Administrador</li>

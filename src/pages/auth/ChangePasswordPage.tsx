@@ -34,7 +34,7 @@ export function ChangePasswordPage() {
             <label className="mb-1 block text-sm font-medium text-slate-700">Contraseña actual</label>
             <input
               type="password"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sage-600 focus:outline-none focus:ring-2 focus:ring-sage-200"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
               {...register('contrasenaActual')}
             />
             {errors.contrasenaActual && (
@@ -46,7 +46,7 @@ export function ChangePasswordPage() {
             <label className="mb-1 block text-sm font-medium text-slate-700">Nueva contraseña</label>
             <input
               type="password"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sage-600 focus:outline-none focus:ring-2 focus:ring-sage-200"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
               {...register('contrasenaNueva')}
             />
             {errors.contrasenaNueva && (
@@ -60,7 +60,7 @@ export function ChangePasswordPage() {
             </label>
             <input
               type="password"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sage-600 focus:outline-none focus:ring-2 focus:ring-sage-200"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
               {...register('confirmarContrasena')}
             />
             {errors.confirmarContrasena && (
@@ -71,7 +71,7 @@ export function ChangePasswordPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-60"
+            className="btn-primary w-full"
           >
             Guardar y continuar
           </button>

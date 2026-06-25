@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 export function TermsPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <Link to="/registro" className="text-sm text-sage-700 hover:underline">
+      <Link to="/registro" className="text-sm text-brand-700 hover:underline">
         ← Volver al registro
       </Link>
 

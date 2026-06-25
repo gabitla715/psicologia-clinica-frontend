@@ -1,12 +1,16 @@
 import { Link } from 'react-router-dom';
+import logoBienestar from '../../assets/images/logo-bienestar-universitario.png';
 
 export function PublicHeader() {
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link to="/" className="flex items-baseline gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-sage-700">UCE</span>
-          <span className="text-sm font-semibold text-slate-800">Bienestar Estudiantil · Psicología</span>
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+        <Link to="/" className="flex items-center">
+          <img
+            src={logoBienestar}
+            alt="Bienestar Universitario — Universidad Central del Ecuador"
+            className="h-12 w-auto"
+          />
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 sm:flex">
@@ -18,7 +22,7 @@ export function PublicHeader() {
 
         <Link
           to="/ingresar"
-          className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+          className="btn-primary"
         >
           Ingresar
         </Link>

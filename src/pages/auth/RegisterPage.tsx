@@ -41,7 +41,7 @@ export function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
       <div className="w-full max-w-lg">
         <div className="mb-6 text-center">
-          <p className="text-xs font-medium uppercase tracking-wide text-sage-700">
+          <p className="text-xs font-medium uppercase tracking-wide text-brand-700">
             Universidad Central del Ecuador
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-800">Crear cuenta de estudiante</h1>
@@ -98,7 +98,7 @@ export function RegisterPage() {
                 <input type="checkbox" className="mt-0.5" {...register('aceptaTerminos')} />
                 <span>
                   He leído y acepto los{' '}
-                  <Link to="/terminos" target="_blank" className="font-medium text-sage-700 hover:underline">
+                  <Link to="/terminos" target="_blank" className="font-medium text-brand-700 hover:underline">
                     Términos y Condiciones
                   </Link>
                   .
@@ -123,7 +123,7 @@ export function RegisterPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-60"
+              className="btn-primary w-full"
             >
               {isSubmitting ? 'Creando cuenta…' : 'Crear cuenta'}
             </button>
@@ -131,7 +131,7 @@ export function RegisterPage() {
 
           <p className="mt-5 text-center text-sm text-slate-500">
             ¿Ya tienes cuenta?{' '}
-            <Link to="/ingresar" className="font-medium text-sage-700 hover:underline">
+            <Link to="/ingresar" className="font-medium text-brand-700 hover:underline">
               Inicia sesión
             </Link>
           </p>
