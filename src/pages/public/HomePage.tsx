@@ -1,42 +1,14 @@
-import { Link } from 'react-router-dom';
 import { Stethoscope, Users, MapPin, Mail, Phone, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { PublicHeader } from '../../components/public/PublicHeader';
+import { HeroCarousel } from '../../components/public/HeroCarousel';
 
 export function HomePage() {
   return (
     <div className="bg-white">
       <PublicHeader />
 
-      {/* Hero */}
-      <section className="border-b border-slate-100 bg-brand-50">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">
-            Universidad Central del Ecuador · Facultad de Filosofía, Letras y Ciencias de la Educación
-          </p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-semibold leading-tight text-slate-900 sm:text-5xl">
-            Acompañamiento psicológico para toda la comunidad estudiantil
-          </h1>
-          <p className="mt-4 max-w-xl text-base text-slate-600">
-            El Área de Bienestar Estudiantil ofrece atención psicológica clínica y general,
-            confidencial y gratuita, a los estudiantes de la Facultad. Conoce nuestros
-            servicios y solicita tu atención.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="#servicios"
-              className="btn-primary"
-            >
-              Ver servicios
-            </a>
-            <a
-              href="#ubicacion"
-              className="btn-secondary"
-            >
-              ¿Dónde estamos?
-            </a>
-          </div>
-        </div>
-      </section>
+      <HeroCarousel />
 
       {/* Quiénes somos */}
       <section id="quienes-somos" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
