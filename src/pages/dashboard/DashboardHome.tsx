@@ -13,8 +13,8 @@ export function DashboardHome() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <Tarjeta titulo="Sesión activa" valor={usuario?.rol ?? '-'} />
-        <Tarjeta titulo="Estado" valor="Conectado (datos simulados)" />
-        <Tarjeta titulo="Backend" valor="Pendiente de integración" />
+        <Tarjeta titulo="Estado" valor="Conectado al backend" />
+        <Tarjeta titulo="Identificación" valor={usuario?.identificacion ?? '-'} />
       </div>
     </div>
   );

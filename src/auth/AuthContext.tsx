@@ -1,6 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { SesionAuth, Usuario, LoginCredenciales, RegistroDatos } from '../types/auth';
-import { login as loginRequest, logout as logoutRequest, registrar as registrarRequest } from '../api/authService';
+import {
+  login as loginRequest,
+  logout as logoutRequest,
+  registrar as registrarRequest,
+  obtenerPerfil as obtenerPerfilRequest,
+} from '../api/authService';
+import { tokenStorage } from '../api/client';
 
 interface AuthContextValue {
   usuario: Usuario | null;
@@ -19,21 +25,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cargando, setCargando] = useState(true);
 
+  // Recuperación de sesión al montar la app.
+  // Si hay accessToken guardado, validamos contra /users/me; si el backend lo
+  // rechaza, el interceptor de axios se encarga del refresh o limpia tokens.
   useEffect(() => {
-    const guardado = localStorage.getItem(STORAGE_KEY);
-    if (guardado) {
+    let activo = true;
+    async function restaurar() {
+      const accessToken = tokenStorage.getAccess();
+      if (!accessToken) {
+        setCargando(false);
+        return;
+      }
       try {
-        setUsuario(JSON.parse(guardado));
+        const perfil = await obtenerPerfilRequest();
+        if (!activo) return;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(perfil));
+        setUsuario(perfil);
       } catch {
+        // Tokens inválidos / expirados sin posibilidad de refresh → limpiamos.
+        tokenStorage.clear();
         localStorage.removeItem(STORAGE_KEY);
+        if (activo) setUsuario(null);
+      } finally {
+        if (activo) setCargando(false);
       }
     }
-    setCargando(false);
+    restaurar();
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  // Escuchamos el evento de logout forzado que dispara el interceptor de axios
+  // cuando el refresh token falla.
+  useEffect(() => {
+    function onForceLogout() {
+      tokenStorage.clear();
+      localStorage.removeItem(STORAGE_KEY);
+      setUsuario(null);
+    }
+    window.addEventListener('auth:logout', onForceLogout);
+    return () => window.removeEventListener('auth:logout', onForceLogout);
   }, []);
 
   function guardarSesion(sesion: SesionAuth) {
-    localStorage.setItem('accessToken', sesion.accessToken);
-    localStorage.setItem('refreshToken', sesion.refreshToken);
+    tokenStorage.save(sesion.accessToken, sesion.refreshToken);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sesion.usuario));
     setUsuario(sesion.usuario);
   }
@@ -52,8 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function cerrarSesion() {
     await logoutRequest();
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    tokenStorage.clear();
     localStorage.removeItem(STORAGE_KEY);
     setUsuario(null);
   }

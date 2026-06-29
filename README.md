@@ -1,63 +1,73 @@
-# Frontend — Módulo de Psicología Clínica y General (UCE)
+# Frontend — Plataforma de Telemedicina (Psicología) UCE
 
-React 19 + Vite + TypeScript + Tailwind.
+Aplicación React + Vite + TypeScript que consume el backend Spring Boot
+`psicologia-clinica-backend`.
 
-## Cómo correrlo
+## Requisitos
+
+- Node.js 20 LTS (o superior)
+- npm 10+ (viene con Node)
+
+## Configuración
+
+Crea un archivo `.env` en la raíz del proyecto (ya viene uno como `.env.example`):
+
+```
+VITE_API_URL=http://localhost:8080/api/v1
+VITE_USE_MOCK=false
+```
+
+- `VITE_API_URL` debe apuntar al backend incluyendo el sufijo `/api/v1`.
+- `VITE_USE_MOCK=true` activa el modo simulado (sin backend) — usado solo en
+  fases tempranas de desarrollo o demos sin red.
+
+## Ejecutar en desarrollo
 
 ```bash
 npm install
-cp .env.test .env
 npm run dev
 ```
 
-Abre http://localhost:5173 — vas a ver la página pública de inicio.
+La app queda en http://localhost:5173.
 
-## Flujo de pantallas
+## Construir para producción
 
-```
-/                  página pública: quiénes somos, servicios, ubicación, contacto
-/ingresar          login (acepta ?servicio=CLINICA|GENERAL para mostrar contexto)
-/registro          registro de estudiante, con checkboxes obligatorios de
-                    Términos y Condiciones + consentimiento de datos (LOPDP)
-/terminos          texto de términos — ES UN BORRADOR, falta validación legal/UCE
-/mi-solicitud       vista del estudiante tras registrarse (placeholder, sin
-                    lógica real de asignación de citas todavía)
-/cambiar-contrasena cambio de contraseña obligatorio (HU-03)
-/dashboard          panel del personal (ADMIN / PSICOLOGO / COORDINADOR)
+```bash
+npm run build
 ```
 
-Cuentas de prueba (modo mock, sin backend):
+El bundle estático queda en `dist/`, listo para servirse con Nginx o cualquier
+servidor estático.
 
-| Correo | Contraseña | Rol |
-| --- | --- | --- |
-| admin@uce.edu.ec | Admin123 | ADMIN |
-| psicologo@uce.edu.ec | Psico123 | PSICOLOGO |
-| coordinador@uce.edu.ec | Coord123 | COORDINADOR (fuerza cambio de contraseña) |
-| estudiante@uce.edu.ec | Estud123 | ESTUDIANTE |
-
-## Cómo está organizado
+## Estructura
 
 ```
 src/
-  api/
-    client.ts        cliente Axios con interceptor de JWT (para cuando haya backend)
-    mockData.ts       usuarios de prueba (bórralos cuando conectes el backend)
-    authService.ts     login()/registrar()/logout() — AQUÍ se decide mock vs backend real
-  auth/
-    AuthContext.tsx    sesión global: usuario actual, iniciarSesion, registrarse, cerrarSesion
-  routes/
-    PrivateRoute.tsx   protege rutas; redirige a /ingresar o /no-autorizado
-    AppRoutes.tsx       mapa de rutas de toda la app (públicas + privadas)
-  pages/
-    public/            HomePage, TermsPage (sitio público)
-    auth/              LoginPage, RegisterPage, ChangePasswordPage
-    estudiante/        MiSolicitud (placeholder)
-    dashboard/         DashboardHome (panel de personal)
-  components/
-    public/            PublicHeader (navbar del sitio público)
-    layout/            AppLayout (sidebar + topbar internos, menú por rol)
-  lib/
-    validators.ts      esquemas Zod para los formularios
-  types/
-    auth.ts            Usuario, Rol, SesionAuth, LoginCredenciales, RegistroDatos
+├── api/
+│   ├── client.ts            ← axios + interceptors + refresh token
+│   ├── authService.ts       ← login, registro, logout, change password
+│   ├── fichaService.ts      ← plantilla para los demás servicios
+│   └── mockData.ts          ← usuarios de prueba para modo mock
+├── auth/
+│   └── AuthContext.tsx      ← contexto + restauración de sesión
+├── components/              ← layout y header público
+├── lib/
+│   └── validators.ts        ← schemas Zod
+├── pages/                   ← páginas por dominio
+├── routes/                  ← rutas y protección por rol
+└── types/
+    └── auth.ts              ← tipos backend + tipos frontend + mappers
 ```
+
+## Patrón de capa de servicios
+
+Los componentes React **nunca** llaman a `apiClient` directamente. Llaman a
+funciones de un servicio (`authService`, `fichaService`, etc.). Cada servicio:
+
+1. Define los tipos del backend (espejo del DTO Java).
+2. Define los tipos del frontend (lo que la UI usa).
+3. Define funciones mapper entre ambos.
+4. Expone métodos asíncronos que la UI consume.
+
+Esto centraliza interceptors, manejo de errores y refresh token en un solo
+lugar, y permite cambiar el backend sin tocar las páginas.

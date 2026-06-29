@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { loginSchema, type LoginFormValues } from '../../lib/validators';
+import { extraerMensajeError } from '../../api/client';
 
 const NOMBRE_SERVICIO: Record<string, string> = {
   CLINICA: 'Psicología Clínica',
@@ -33,8 +34,8 @@ export function LoginPage() {
       const estado = location.state as { from?: { pathname: string } } | null;
       const destinoPorDefecto = usuario.rol === 'ESTUDIANTE' ? '/mi-solicitud' : '/dashboard';
       navigate(estado?.from?.pathname ?? destinoPorDefecto, { replace: true });
-    } catch {
-      setError('Correo o contraseña incorrectos.');
+    } catch (e) {
+      setError(extraerMensajeError(e, 'Correo o contraseña incorrectos.'));
     }
   }
 
@@ -69,7 +70,7 @@ export function LoginPage() {
                 id="email"
                 type="email"
                 autoComplete="email"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                className="campo-input"
                 placeholder="nombre@uce.edu.ec"
                 {...register('email')}
               />
@@ -84,7 +85,7 @@ export function LoginPage() {
                 id="contrasena"
                 type="password"
                 autoComplete="current-password"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-200"
+                className="campo-input"
                 placeholder="••••••••"
                 {...register('contrasena')}
               />
@@ -95,11 +96,7 @@ export function LoginPage() {
 
             {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="btn-primary w-full"
-            >
+            <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
               {isSubmitting ? 'Ingresando…' : 'Iniciar sesión'}
             </button>
           </form>
@@ -113,16 +110,6 @@ export function LoginPage() {
               Regístrate aquí
             </Link>
           </p>
-        </div>
-
-        <div className="mt-6 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-xs text-brand-800">
-          <p className="font-medium">Modo de prueba (datos simulados, sin backend)</p>
-          <ul className="mt-1 space-y-0.5">
-            <li>admin@uce.edu.ec / Admin123 — Administrador</li>
-            <li>psicologo@uce.edu.ec / Psico123 — Psicólogo/a</li>
-            <li>coordinador@uce.edu.ec / Coord123 — Coordinador/a (fuerza cambio de contraseña)</li>
-            <li>estudiante@uce.edu.ec / Estud123 — Estudiante</li>
-          </ul>
         </div>
 
         <p className="mt-4 text-center text-xs text-slate-400">
