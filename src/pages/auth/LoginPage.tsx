@@ -1,25 +1,16 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { loginSchema, type LoginFormValues } from '../../lib/validators';
 import { extraerMensajeError } from '../../api/client';
-
-const NOMBRE_SERVICIO: Record<string, string> = {
-  CLINICA: 'Psicología Clínica',
-  GENERAL: 'Psicología General',
-};
 
 export function LoginPage() {
   const { iniciarSesion } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-
-  const servicio = searchParams.get('servicio');
-  const nombreServicio = servicio ? NOMBRE_SERVICIO[servicio] : null;
 
   const {
     register,
@@ -32,7 +23,15 @@ export function LoginPage() {
     try {
       const usuario = await iniciarSesion(values);
       const estado = location.state as { from?: { pathname: string } } | null;
-      const destinoPorDefecto = usuario.rol === 'ESTUDIANTE' ? '/mi-solicitud' : '/dashboard';
+
+      // Estudiante sin servicio elegido → va a elegir servicio.
+      if (usuario.rol === 'ESTUDIANTE' && !usuario.servicioInteres) {
+        navigate(estado?.from?.pathname ?? '/elegir-servicio', { replace: true });
+        return;
+      }
+
+      const destinoPorDefecto =
+        usuario.rol === 'ESTUDIANTE' ? '/mi-solicitud' : '/dashboard';
       navigate(estado?.from?.pathname ?? destinoPorDefecto, { replace: true });
     } catch (e) {
       setError(extraerMensajeError(e, 'Correo o contraseña incorrectos.'));
@@ -49,15 +48,9 @@ export function LoginPage() {
           <h1 className="mt-1 text-2xl font-semibold text-slate-800">
             Bienestar Estudiantil — Psicología
           </h1>
-          {nombreServicio ? (
-            <p className="mt-1 text-sm text-slate-500">
-              Inicia sesión para solicitar atención de <strong>{nombreServicio}</strong>
-            </p>
-          ) : (
-            <p className="mt-1 text-sm text-slate-500">
-              Facultad de Filosofía, Letras y Ciencias de la Educación
-            </p>
-          )}
+          <p className="mt-1 text-sm text-slate-500">
+            Facultad de Filosofía, Letras y Ciencias de la Educación
+          </p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -78,9 +71,17 @@ export function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="contrasena" className="mb-1 block text-sm font-medium text-slate-700">
-                Contraseña
-              </label>
+              <div className="mb-1 flex items-center justify-between">
+                <label htmlFor="contrasena" className="block text-sm font-medium text-slate-700">
+                  Contraseña
+                </label>
+                <Link
+                  to="/recuperar-contrasena"
+                  className="text-xs font-medium text-brand-700 hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
               <input
                 id="contrasena"
                 type="password"
@@ -103,10 +104,7 @@ export function LoginPage() {
 
           <p className="mt-5 text-center text-sm text-slate-500">
             ¿No tienes cuenta?{' '}
-            <Link
-              to={`/registro${servicio ? `?servicio=${servicio}` : ''}`}
-              className="font-medium text-brand-700 hover:underline"
-            >
+            <Link to="/registro" className="font-medium text-brand-700 hover:underline">
               Regístrate aquí
             </Link>
           </p>

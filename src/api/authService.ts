@@ -15,21 +15,14 @@ import {
 } from '../types/auth';
 
 const USAR_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-
-// El backend devuelve este valor literal en accessToken/refreshToken cuando
-// la cuenta se creó pero requiere verificación por correo antes de usarse.
 const PENDING_VERIFICATION = 'PENDING_VERIFICATION';
 
-/**
- * Resultado del registro. La cuenta puede estar lista (con tokens reales)
- * o pendiente de verificación por correo.
- */
 export type ResultadoRegistro =
   | { tipo: 'LISTO'; sesion: SesionAuth }
   | { tipo: 'PENDIENTE_VERIFICACION'; email: string };
 
 // ──────────────────────────────────────────────────────────────
-// MODO REAL — backend Spring Boot
+// MODO REAL
 // ──────────────────────────────────────────────────────────────
 
 async function loginReal(cred: LoginCredenciales): Promise<SesionAuth> {
@@ -43,12 +36,11 @@ async function loginReal(cred: LoginCredenciales): Promise<SesionAuth> {
     tokens.refreshToken === PENDING_VERIFICATION
   ) {
     throw new Error(
-      'Tu cuenta aún no está verificada. Revisa tu correo institucional para activarla.'
+      'Tu cuenta aún no está verificada. Revisa tu correo institucional o contacta a Bienestar Estudiantil.'
     );
   }
 
   tokenStorage.save(tokens.accessToken, tokens.refreshToken);
-
   const { data: perfil } = await apiClient.get<UserProfileResponseBackend>('/users/me/');
   const usuario = mapearPerfilBackendAUsuario(perfil);
 
@@ -60,17 +52,11 @@ async function loginReal(cred: LoginCredenciales): Promise<SesionAuth> {
 }
 
 async function registrarReal(datos: RegistroDatos): Promise<ResultadoRegistro> {
-  // Guardamos servicioInteres ANTES de la llamada porque no se envía al backend.
-  localStorage.setItem(`servicioInteres:${datos.email}`, datos.servicioInteres);
-
   const { data: tokens } = await apiClient.post<AuthResponseBackend>(
     '/auth/register-student',
     mapearRegistroDatosARegisterBackend(datos)
   );
 
-  // CASO ESPERADO: el backend exige verificación de correo antes de activar la cuenta.
-  // Devuelve `{accessToken: "PENDING_VERIFICATION", refreshToken: "PENDING_VERIFICATION"}`.
-  // En ese caso NO guardamos tokens (no son JWT válidos) y devolvemos PENDIENTE.
   if (
     tokens.accessToken === PENDING_VERIFICATION ||
     tokens.refreshToken === PENDING_VERIFICATION
@@ -78,9 +64,7 @@ async function registrarReal(datos: RegistroDatos): Promise<ResultadoRegistro> {
     return { tipo: 'PENDIENTE_VERIFICACION', email: datos.email };
   }
 
-  // CASO ALTERNO: el backend ya devolvió tokens reales (cuenta activa).
   tokenStorage.save(tokens.accessToken, tokens.refreshToken);
-
   const { data: perfil } = await apiClient.get<UserProfileResponseBackend>('/users/me/');
   const usuario = mapearPerfilBackendAUsuario(perfil);
 
@@ -119,6 +103,21 @@ async function obtenerPerfilReal(): Promise<Usuario> {
   return mapearPerfilBackendAUsuario(perfil);
 }
 
+// Recuperación de contraseña
+async function solicitarRecuperacionReal(email: string): Promise<void> {
+  await apiClient.post('/auth/forgot-password', { email });
+}
+
+async function restablecerContrasenaReal(args: {
+  token: string;
+  contrasenaNueva: string;
+}): Promise<void> {
+  await apiClient.post('/auth/reset-password', {
+    token: args.token,
+    newPassword: args.contrasenaNueva,
+  });
+}
+
 // ──────────────────────────────────────────────────────────────
 // MODO MOCK
 // ──────────────────────────────────────────────────────────────
@@ -142,7 +141,6 @@ function emitirSesionMock(u: Usuario & { contrasena: string }): SesionAuth {
 // ──────────────────────────────────────────────────────────────
 // API PÚBLICA
 // ──────────────────────────────────────────────────────────────
-
 export async function login(cred: LoginCredenciales): Promise<SesionAuth> {
   if (USAR_MOCK) {
     const u = usuariosMock.find(
@@ -167,7 +165,6 @@ export async function registrar(datos: RegistroDatos): Promise<ResultadoRegistro
       email: datos.email,
       rol: 'ESTUDIANTE',
       debeCambiarContrasena: false,
-      servicioInteres: datos.servicioInteres,
       contrasena: datos.contrasena,
     };
     usuariosMock.push(nuevo);
@@ -196,4 +193,17 @@ export async function obtenerPerfil(): Promise<Usuario> {
     return JSON.parse(guardado) as Usuario;
   }
   return obtenerPerfilReal();
+}
+
+export async function solicitarRecuperacion(email: string): Promise<void> {
+  if (USAR_MOCK) return;
+  await solicitarRecuperacionReal(email);
+}
+
+export async function restablecerContrasena(args: {
+  token: string;
+  contrasenaNueva: string;
+}): Promise<void> {
+  if (USAR_MOCK) return;
+  await restablecerContrasenaReal(args);
 }

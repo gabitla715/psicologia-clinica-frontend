@@ -1,3 +1,6 @@
+// ============================================================
+// TIPOS DEL BACKEND — espejo exacto del contrato HTTP.
+// ============================================================
 export type RolBackend = 'STUDENT' | 'SPECIALIST' | 'ADMIN' | 'COORDINATOR';
 
 export interface AuthResponseBackend {
@@ -67,7 +70,7 @@ export interface StudentRegisterRequestBackend {
 }
 
 // ============================================================
-// TIPOS DEL FRONTEND — lo que la UI consume.
+// TIPOS DEL FRONTEND
 // ============================================================
 export type Rol = 'ADMIN' | 'PSICOLOGO' | 'COORDINADOR' | 'ESTUDIANTE';
 export type ServicioPsicologico = 'CLINICA' | 'GENERAL';
@@ -103,7 +106,6 @@ export interface Usuario {
   rol: Rol;
   debeCambiarContrasena: boolean;
   servicioInteres?: ServicioPsicologico;
-  // Datos específicos por rol (solo presentes en el rol correspondiente)
   datosEstudiante?: DatosEstudiante;
   datosEspecialista?: DatosEspecialista;
 }
@@ -119,6 +121,7 @@ export interface LoginCredenciales {
   contrasena: string;
 }
 
+// El estudiante ya NO elige servicioInteres en el registro: lo hace después del login.
 export interface RegistroDatos {
   nombres: string;
   apellidos: string;
@@ -138,11 +141,10 @@ export interface RegistroDatos {
   tipoDiscapacidad?: string;
   porcentajeDiscapacidad?: number;
   conadisId?: string;
-  servicioInteres: ServicioPsicologico;
 }
 
 // ============================================================
-// MAPPERS — traducen entre formato backend y formato frontend.
+// MAPPERS
 // ============================================================
 const ROL_BACKEND_A_FRONT: Record<RolBackend, Rol> = {
   STUDENT: 'ESTUDIANTE',
@@ -152,6 +154,8 @@ const ROL_BACKEND_A_FRONT: Record<RolBackend, Rol> = {
 };
 
 export function mapearPerfilBackendAUsuario(perfil: UserProfileResponseBackend): Usuario {
+  // El servicio elegido por el estudiante se guarda en localStorage al hacer
+  // la selección en la pantalla "Elegir servicio".
   const servicioGuardado = localStorage.getItem(`servicioInteres:${perfil.email}`);
 
   const datosEstudiante: DatosEstudiante | undefined = perfil.studentData

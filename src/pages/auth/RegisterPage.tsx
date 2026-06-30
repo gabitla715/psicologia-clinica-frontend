@@ -1,54 +1,70 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
-import { registroSchema, type RegistroFormValues } from '../../lib/validators';
-import type { ServicioPsicologico } from '../../types/auth';
+import {
+  registroSchema,
+  type RegistroFormValues,
+  limpiarSoloLetras,
+  limpiarSoloDigitos,
+} from '../../lib/validators';
 import { extraerMensajeError } from '../../api/client';
+import { CARRERAS_UCE } from '../../lib/carreras-uce';
 
 export function RegisterPage() {
   const { registrarse } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [emailRegistrado, setEmailRegistrado] = useState<string | null>(null);
-
-  const servicioInicial = (searchParams.get('servicio') as ServicioPsicologico | null) ?? 'GENERAL';
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegistroFormValues>({
     resolver: zodResolver(registroSchema),
     defaultValues: {
-      servicioInteres: servicioInicial,
       aceptaTerminos: false,
       aceptaDatos: false,
-      tieneDiscapacidad: false,
+      discapacidad: 'NO',
       nacionalidad: 'Ecuatoriana',
     },
   });
 
-  const tieneDiscapacidad = watch('tieneDiscapacidad');
+  const tieneDiscapacidad = watch('discapacidad') === 'SI';
 
   async function onSubmit(values: RegistroFormValues) {
     setError(null);
     try {
-      const { confirmarContrasena, aceptaTerminos, aceptaDatos, ...datos } = values;
+      const {
+        confirmarContrasena,
+        aceptaTerminos,
+        aceptaDatos,
+        discapacidad,
+        tipoDiscapacidad,
+        porcentajeDiscapacidad,
+        conadisId,
+        ...resto
+      } = values;
       void confirmarContrasena;
       void aceptaTerminos;
       void aceptaDatos;
-      const resultado = await registrarse(datos);
 
+      const datos = {
+        ...resto,
+        tieneDiscapacidad: discapacidad === 'SI',
+        tipoDiscapacidad: discapacidad === 'SI' ? tipoDiscapacidad : undefined,
+        porcentajeDiscapacidad: discapacidad === 'SI' ? porcentajeDiscapacidad : undefined,
+        conadisId: discapacidad === 'SI' ? conadisId : undefined,
+      };
+
+      const resultado = await registrarse(datos);
       if (resultado.tipo === 'LISTO') {
-        // Cuenta activada inmediatamente (raro): vamos directo a la app.
-        navigate('/mi-solicitud', { replace: true });
+        navigate('/elegir-servicio', { replace: true });
       } else {
-        // PENDIENTE_VERIFICACION: el backend creó la cuenta pero requiere
-        // verificación por correo. Mostramos la pantalla informativa.
         setEmailRegistrado(resultado.email);
       }
     } catch (e) {
@@ -56,7 +72,7 @@ export function RegisterPage() {
     }
   }
 
-  // ─── Pantalla de "cuenta creada, verifica tu correo" ────────────
+  // Pantalla de confirmación (PENDING_VERIFICATION)
   if (emailRegistrado) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
@@ -66,24 +82,18 @@ export function RegisterPage() {
           </div>
           <h1 className="text-lg font-semibold text-slate-800">¡Cuenta creada!</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Tu solicitud fue registrada correctamente. Hemos enviado un enlace de
-            verificación a:
+            Tu solicitud fue registrada correctamente. Enviamos un enlace de verificación a:
           </p>
           <p className="mt-2 text-sm font-semibold text-slate-800">{emailRegistrado}</p>
           <p className="mt-3 text-sm text-slate-500">
             Revisa tu bandeja de entrada (y la carpeta de spam) y haz clic en el enlace para
             activar tu cuenta antes de iniciar sesión.
           </p>
-
           <div className="mt-6 rounded-lg bg-amber-50 px-4 py-3 text-left text-xs text-amber-800">
-            <strong>Si no recibes el correo en unos minutos</strong>, comunícate con el Área
-            de Bienestar Estudiantil para activar tu cuenta manualmente.
+            Si no recibes el correo en unos minutos, comunícate con el Área de Bienestar
+            Estudiantil para activar tu cuenta manualmente.
           </div>
-
-          <Link
-            to="/ingresar"
-            className="btn-primary mt-6 inline-block w-full"
-          >
+          <Link to="/ingresar" className="btn-primary mt-6 inline-block w-full">
             Ir al inicio de sesión
           </Link>
         </div>
@@ -91,7 +101,6 @@ export function RegisterPage() {
     );
   }
 
-  // ─── Formulario de registro ─────────────────────────────────────
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
       <div className="w-full max-w-2xl">
@@ -104,27 +113,53 @@ export function RegisterPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+            {/* ── Datos personales ── */}
             <section>
               <h2 className="mb-3 text-sm font-semibold text-slate-700">Datos personales</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Campo label="Nombres *" error={errors.nombres?.message}>
-                  <input className="campo-input" {...register('nombres')} />
+                  <input
+                    className="campo-input"
+                    autoComplete="given-name"
+                    {...register('nombres')}
+                    onChange={(e) => setValue('nombres', limpiarSoloLetras(e.target.value), { shouldValidate: true })}
+                  />
                 </Campo>
                 <Campo label="Apellidos *" error={errors.apellidos?.message}>
-                  <input className="campo-input" {...register('apellidos')} />
+                  <input
+                    className="campo-input"
+                    autoComplete="family-name"
+                    {...register('apellidos')}
+                    onChange={(e) => setValue('apellidos', limpiarSoloLetras(e.target.value), { shouldValidate: true })}
+                  />
                 </Campo>
                 <Campo label="Cédula o pasaporte *" error={errors.identificacion?.message}>
-                  <input className="campo-input" maxLength={20} {...register('identificacion')} />
+                  <input
+                    className="campo-input"
+                    maxLength={20}
+                    placeholder="1700000000"
+                    {...register('identificacion')}
+                  />
                 </Campo>
                 <Campo label="Teléfono *" error={errors.telefono?.message}>
-                  <input className="campo-input" {...register('telefono')} placeholder="0991234567" />
+                  <input
+                    className="campo-input"
+                    inputMode="numeric"
+                    placeholder="0991234567"
+                    {...register('telefono')}
+                    onChange={(e) => setValue('telefono', limpiarSoloDigitos(e.target.value, 10), { shouldValidate: true })}
+                  />
                 </Campo>
                 <Campo label="Fecha de nacimiento *" error={errors.fechaNacimiento?.message}>
                   <input type="date" className="campo-input" {...register('fechaNacimiento')} />
                 </Campo>
                 <Campo label="Nacionalidad *" error={errors.nacionalidad?.message}>
-                  <input className="campo-input" {...register('nacionalidad')} />
+                  <input
+                    className="campo-input"
+                    {...register('nacionalidad')}
+                    onChange={(e) => setValue('nacionalidad', limpiarSoloLetras(e.target.value), { shouldValidate: true })}
+                  />
                 </Campo>
                 <Campo label="Sexo *" error={errors.sexo?.message}>
                   <select className="campo-input" {...register('sexo')}>
@@ -161,32 +196,75 @@ export function RegisterPage() {
               </div>
             </section>
 
+            {/* ── Datos académicos ── */}
             <section>
               <h2 className="mb-3 text-sm font-semibold text-slate-700">Datos académicos</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Campo label="Carrera *" error={errors.carrera?.message}>
-                  <input className="campo-input" {...register('carrera')} placeholder="Ej. Pedagogía de las Ciencias Experimentales" />
+                  <select className="campo-input" {...register('carrera')}>
+                    <option value="">Selecciona tu carrera…</option>
+                    {agruparCarrerasPorFacultad().map(([facultad, carreras]) => (
+                      <optgroup key={facultad} label={facultad}>
+                        {carreras.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
                 </Campo>
-                <Campo label="Semestre / Paralelo *" error={errors.semestre?.message}>
-                  <input className="campo-input" {...register('semestre')} placeholder="Ej. 5to / A" />
+                <Campo label="Semestre *" error={errors.semestre?.message}>
+                  <select className="campo-input" {...register('semestre')}>
+                    <option value="">Selecciona…</option>
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={String(n)}>
+                        {n}.º semestre
+                      </option>
+                    ))}
+                  </select>
                 </Campo>
               </div>
             </section>
 
+            {/* ── Discapacidad ── */}
             <section>
-              <h2 className="mb-3 text-sm font-semibold text-slate-700">¿Tienes alguna discapacidad?</h2>
-              <label className="mb-3 flex items-center gap-2 text-sm text-slate-600">
-                <input type="checkbox" {...register('tieneDiscapacidad')} />
-                Sí, tengo discapacidad reconocida.
-              </label>
+              <h2 className="mb-3 text-sm font-semibold text-slate-700">
+                ¿Tienes alguna discapacidad reconocida? *
+              </h2>
+              <div className="flex gap-6 text-sm text-slate-700">
+                <label className="flex items-center gap-2">
+                  <input type="radio" value="SI" {...register('discapacidad')} />
+                  Sí
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="radio" value="NO" {...register('discapacidad')} />
+                  No
+                </label>
+              </div>
+              {errors.discapacidad && (
+                <p className="mt-1 text-xs text-red-600">{errors.discapacidad.message}</p>
+              )}
+
               {tieneDiscapacidad && (
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="mt-4 grid gap-4 sm:grid-cols-3">
                   <Campo label="Tipo de discapacidad" error={errors.tipoDiscapacidad?.message}>
-                    <input className="campo-input" {...register('tipoDiscapacidad')} />
+                    <select className="campo-input" {...register('tipoDiscapacidad')}>
+                      <option value="">Selecciona…</option>
+                      <option value="Física">Física</option>
+                      <option value="Visual">Visual</option>
+                      <option value="Auditiva">Auditiva</option>
+                      <option value="Intelectual">Intelectual</option>
+                      <option value="Psicosocial">Psicosocial</option>
+                      <option value="Múltiple">Múltiple</option>
+                      <option value="Otra">Otra</option>
+                    </select>
                   </Campo>
                   <Campo label="Porcentaje (0-100)" error={errors.porcentajeDiscapacidad?.message}>
                     <input
                       type="number"
+                      min={0}
+                      max={100}
                       className="campo-input"
                       {...register('porcentajeDiscapacidad', { valueAsNumber: true })}
                     />
@@ -198,6 +276,7 @@ export function RegisterPage() {
               )}
             </section>
 
+            {/* ── Credenciales ── */}
             <section>
               <h2 className="mb-3 text-sm font-semibold text-slate-700">Credenciales de acceso</h2>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -212,25 +291,12 @@ export function RegisterPage() {
                   <input type="password" className="campo-input" {...register('confirmarContrasena')} />
                 </Campo>
               </div>
+              <p className="mt-2 text-xs text-slate-500">
+                Mínimo 8 caracteres, debe incluir una mayúscula y un número.
+              </p>
             </section>
 
-            <section>
-              <h2 className="mb-2 text-sm font-semibold text-slate-700">¿Qué servicio necesitas?</h2>
-              <div className="flex flex-wrap gap-4 text-sm text-slate-600">
-                <label className="flex items-center gap-2">
-                  <input type="radio" value="CLINICA" {...register('servicioInteres')} />
-                  Psicología Clínica
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="radio" value="GENERAL" {...register('servicioInteres')} />
-                  Psicología General
-                </label>
-              </div>
-              {errors.servicioInteres && (
-                <p className="mt-1 text-xs text-red-600">{errors.servicioInteres.message}</p>
-              )}
-            </section>
-
+            {/* ── Aceptaciones ── */}
             <section className="space-y-2 border-t border-slate-100 pt-4">
               <label className="flex items-start gap-2 text-sm text-slate-600">
                 <input type="checkbox" className="mt-0.5" {...register('aceptaTerminos')} />
@@ -273,6 +339,17 @@ export function RegisterPage() {
       </div>
     </div>
   );
+}
+
+// Helper: agrupa la lista plana de carreras por facultad para usar <optgroup>.
+function agruparCarrerasPorFacultad(): Array<[string, string[]]> {
+  const mapa = new Map<string, string[]>();
+  for (const item of CARRERAS_UCE) {
+    const lista = mapa.get(item.facultad) ?? [];
+    lista.push(item.carrera);
+    mapa.set(item.facultad, lista);
+  }
+  return Array.from(mapa.entries());
 }
 
 function Campo({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
