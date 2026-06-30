@@ -1,8 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type { AuthResponseBackend } from '../types/auth';
 
-// La baseURL apunta al prefijo /api/v1 del backend (Spring Boot Hexagonal).
-// Si cambia el contrato del backend, este es el único lugar que se toca.
 const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1';
 
 export const apiClient = axios.create({
@@ -28,8 +26,27 @@ export const tokenStorage = {
   },
 };
 
-// ─── Request interceptor: añade Authorization ──────────────────
+// Rutas públicas a las que NO debemos enviar Authorization.
+const PUBLIC_ENDPOINTS = [
+  '/auth/login',
+  '/auth/register-student',
+  '/auth/refresh',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify-email',
+];
+
+function esEndpointPublico(url: string | undefined): boolean {
+  if (!url) return false;
+  return PUBLIC_ENDPOINTS.some((path) => url.includes(path));
+}
+
+// ─── Request interceptor ───────────────────────────────────────
 apiClient.interceptors.request.use((config) => {
+  if (esEndpointPublico(config.url)) {
+    delete config.headers.Authorization;
+    return config;
+  }
   const token = tokenStorage.getAccess();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -38,15 +55,6 @@ apiClient.interceptors.request.use((config) => {
 });
 
 // ─── Response interceptor: refresh token automático ────────────
-//
-// Si una petición falla con 401, intentamos refrescar el token UNA vez
-// y reintentamos la petición original. Si el refresh también falla,
-// limpiamos sesión y disparamos un evento para que el AuthContext redirija.
-//
-// Si llegan varios 401 a la vez (típico cuando el access token expira
-// con el dashboard abierto), encolamos las peticiones para que esperen
-// el mismo refresh en lugar de disparar uno por cada una.
-
 let refreshPromise: Promise<string> | null = null;
 type QueuedRequest = {
   resolve: (token: string) => void;
@@ -65,15 +73,11 @@ function processQueue(error: unknown, token: string | null) {
 async function refrescarAccessToken(): Promise<string> {
   const refresh = tokenStorage.getRefresh();
   if (!refresh) throw new Error('No hay refresh token');
-
-  // Usamos axios "plano" (no apiClient) para que NO entre al interceptor
-  // de nuevo y se cree un bucle infinito.
   const { data } = await axios.post<AuthResponseBackend>(
     `${baseURL}/auth/refresh`,
     { refreshToken: refresh },
     { headers: { 'Content-Type': 'application/json' } }
   );
-
   tokenStorage.save(data.accessToken, data.refreshToken);
   return data.accessToken;
 }
@@ -87,9 +91,7 @@ apiClient.interceptors.response.use(
     if (status !== 401 || !original || original._retry) {
       return Promise.reject(error);
     }
-
-    // /auth/refresh y /auth/login no se reintentan: si dan 401 ya no hay nada que hacer.
-    if (original.url?.includes('/auth/refresh') || original.url?.includes('/auth/login')) {
+    if (esEndpointPublico(original.url)) {
       tokenStorage.clear();
       return Promise.reject(error);
     }
@@ -126,14 +128,70 @@ apiClient.interceptors.response.use(
   }
 );
 
-// ─── Helper para extraer mensaje de error legible ──────────────
+// ─── Helper para mensajes de error legibles ─────────────────────
+// Lee TODOS los formatos típicos de Spring Boot (message, error, errors[],
+// validationErrors[], detail, title) y devuelve algo útil para el usuario.
 export function extraerMensajeError(error: unknown, mensajePorDefecto = 'Ocurrió un error'): string {
+  // Log siempre en consola para que el desarrollador vea qué pasó.
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { message?: string; error?: string } | undefined;
-    if (data?.message) return data.message;
-    if (data?.error) return data.error;
-    if (error.response?.status === 0) return 'No se pudo conectar al servidor';
+    console.error('[apiClient] HTTP error', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+    });
+
+    const data = error.response?.data as
+      | {
+          message?: string;
+          error?: string;
+          detail?: string;
+          title?: string;
+          errors?: Array<{ defaultMessage?: string; field?: string; message?: string }>;
+          validationErrors?: Record<string, string>;
+        }
+      | string
+      | undefined;
+
+    if (typeof data === 'string' && data.length > 0 && data.length < 300) {
+      return data;
+    }
+
+    if (data && typeof data === 'object') {
+      // Errores de validación tipo Spring Boot (BindingResult).
+      if (Array.isArray(data.errors) && data.errors.length > 0) {
+        const mensajes = data.errors
+          .map((e) => {
+            const campo = e.field ? `${e.field}: ` : '';
+            return campo + (e.defaultMessage ?? e.message ?? '');
+          })
+          .filter((m) => m.trim().length > 0);
+        if (mensajes.length > 0) return mensajes.join(' • ');
+      }
+      // Errores de validación tipo Map<String,String>.
+      if (data.validationErrors && Object.keys(data.validationErrors).length > 0) {
+        return Object.entries(data.validationErrors)
+          .map(([campo, msg]) => `${campo}: ${msg}`)
+          .join(' • ');
+      }
+      if (data.message) return data.message;
+      if (data.detail) return data.detail;
+      if (data.error) return data.error;
+      if (data.title) return data.title;
+    }
+
+    // Mensajes específicos por status si no hay cuerpo legible.
+    const status = error.response?.status;
+    if (status === 400) return 'El servidor rechazó el formulario. Revisa que todos los campos estén bien llenos.';
+    if (status === 401) return 'No estás autorizado. Inicia sesión nuevamente.';
+    if (status === 403) return 'No tienes permisos para realizar esta acción.';
+    if (status === 404) return 'Recurso no encontrado.';
+    if (status === 409) return 'Ya existe un registro con esos datos (correo o cédula duplicados).';
+    if (status && status >= 500) return 'Error interno del servidor. Intenta de nuevo en un momento.';
+    if (status === 0 || !error.response) return 'No se pudo conectar al servidor.';
   }
+
   if (error instanceof Error) return error.message;
   return mensajePorDefecto;
 }

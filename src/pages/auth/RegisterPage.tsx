@@ -12,6 +12,7 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const [emailRegistrado, setEmailRegistrado] = useState<string | null>(null);
 
   const servicioInicial = (searchParams.get('servicio') as ServicioPsicologico | null) ?? 'GENERAL';
 
@@ -40,13 +41,57 @@ export function RegisterPage() {
       void confirmarContrasena;
       void aceptaTerminos;
       void aceptaDatos;
-      await registrarse(datos);
-      navigate('/mi-solicitud', { replace: true });
+      const resultado = await registrarse(datos);
+
+      if (resultado.tipo === 'LISTO') {
+        // Cuenta activada inmediatamente (raro): vamos directo a la app.
+        navigate('/mi-solicitud', { replace: true });
+      } else {
+        // PENDIENTE_VERIFICACION: el backend creó la cuenta pero requiere
+        // verificación por correo. Mostramos la pantalla informativa.
+        setEmailRegistrado(resultado.email);
+      }
     } catch (e) {
       setError(extraerMensajeError(e, 'No se pudo completar el registro.'));
     }
   }
 
+  // ─── Pantalla de "cuenta creada, verifica tu correo" ────────────
+  if (emailRegistrado) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            ✓
+          </div>
+          <h1 className="text-lg font-semibold text-slate-800">¡Cuenta creada!</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Tu solicitud fue registrada correctamente. Hemos enviado un enlace de
+            verificación a:
+          </p>
+          <p className="mt-2 text-sm font-semibold text-slate-800">{emailRegistrado}</p>
+          <p className="mt-3 text-sm text-slate-500">
+            Revisa tu bandeja de entrada (y la carpeta de spam) y haz clic en el enlace para
+            activar tu cuenta antes de iniciar sesión.
+          </p>
+
+          <div className="mt-6 rounded-lg bg-amber-50 px-4 py-3 text-left text-xs text-amber-800">
+            <strong>Si no recibes el correo en unos minutos</strong>, comunícate con el Área
+            de Bienestar Estudiantil para activar tu cuenta manualmente.
+          </div>
+
+          <Link
+            to="/ingresar"
+            className="btn-primary mt-6 inline-block w-full"
+          >
+            Ir al inicio de sesión
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Formulario de registro ─────────────────────────────────────
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
       <div className="w-full max-w-2xl">
@@ -60,7 +105,6 @@ export function RegisterPage() {
 
         <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Identificación */}
             <section>
               <h2 className="mb-3 text-sm font-semibold text-slate-700">Datos personales</h2>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -117,7 +161,6 @@ export function RegisterPage() {
               </div>
             </section>
 
-            {/* Datos académicos */}
             <section>
               <h2 className="mb-3 text-sm font-semibold text-slate-700">Datos académicos</h2>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -130,7 +173,6 @@ export function RegisterPage() {
               </div>
             </section>
 
-            {/* Discapacidad */}
             <section>
               <h2 className="mb-3 text-sm font-semibold text-slate-700">¿Tienes alguna discapacidad?</h2>
               <label className="mb-3 flex items-center gap-2 text-sm text-slate-600">
@@ -156,14 +198,13 @@ export function RegisterPage() {
               )}
             </section>
 
-            {/* Credenciales */}
             <section>
               <h2 className="mb-3 text-sm font-semibold text-slate-700">Credenciales de acceso</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Campo label="Correo institucional *" error={errors.email?.message}>
                   <input type="email" className="campo-input" placeholder="nombre@uce.edu.ec" {...register('email')} />
                 </Campo>
-                <div /> {/* spacer */}
+                <div />
                 <Campo label="Contraseña *" error={errors.contrasena?.message}>
                   <input type="password" className="campo-input" {...register('contrasena')} />
                 </Campo>
@@ -173,7 +214,6 @@ export function RegisterPage() {
               </div>
             </section>
 
-            {/* Servicio */}
             <section>
               <h2 className="mb-2 text-sm font-semibold text-slate-700">¿Qué servicio necesitas?</h2>
               <div className="flex flex-wrap gap-4 text-sm text-slate-600">
@@ -191,7 +231,6 @@ export function RegisterPage() {
               )}
             </section>
 
-            {/* Aceptaciones */}
             <section className="space-y-2 border-t border-slate-100 pt-4">
               <label className="flex items-start gap-2 text-sm text-slate-600">
                 <input type="checkbox" className="mt-0.5" {...register('aceptaTerminos')} />

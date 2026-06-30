@@ -14,25 +14,41 @@ import {
   mapearRegistroDatosARegisterBackend,
 } from '../types/auth';
 
-// Si VITE_USE_MOCK === 'true' usa el simulador en memoria; cualquier otro valor
-// (o ausencia de la variable) usa el backend real.
 const USAR_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+
+// El backend devuelve este valor literal en accessToken/refreshToken cuando
+// la cuenta se creó pero requiere verificación por correo antes de usarse.
+const PENDING_VERIFICATION = 'PENDING_VERIFICATION';
+
+/**
+ * Resultado del registro. La cuenta puede estar lista (con tokens reales)
+ * o pendiente de verificación por correo.
+ */
+export type ResultadoRegistro =
+  | { tipo: 'LISTO'; sesion: SesionAuth }
+  | { tipo: 'PENDIENTE_VERIFICACION'; email: string };
 
 // ──────────────────────────────────────────────────────────────
 // MODO REAL — backend Spring Boot
 // ──────────────────────────────────────────────────────────────
 
 async function loginReal(cred: LoginCredenciales): Promise<SesionAuth> {
-  // 1) Pedimos los tokens.
   const { data: tokens } = await apiClient.post<AuthResponseBackend>(
     '/auth/login',
     mapearCredencialesALoginBackend(cred)
   );
 
-  // 2) Guardamos los tokens ANTES de pedir el perfil; /users/me requiere Bearer.
+  if (
+    tokens.accessToken === PENDING_VERIFICATION ||
+    tokens.refreshToken === PENDING_VERIFICATION
+  ) {
+    throw new Error(
+      'Tu cuenta aún no está verificada. Revisa tu correo institucional para activarla.'
+    );
+  }
+
   tokenStorage.save(tokens.accessToken, tokens.refreshToken);
 
-  // 3) Pedimos el perfil del usuario autenticado.
   const { data: perfil } = await apiClient.get<UserProfileResponseBackend>('/users/me/');
   const usuario = mapearPerfilBackendAUsuario(perfil);
 
@@ -43,9 +59,8 @@ async function loginReal(cred: LoginCredenciales): Promise<SesionAuth> {
   };
 }
 
-async function registrarReal(datos: RegistroDatos): Promise<SesionAuth> {
-  // Guardamos servicioInteres ANTES de la llamada porque no se envía al backend
-  // (no existe el campo allí). Después lo recuperaremos al mapear el perfil.
+async function registrarReal(datos: RegistroDatos): Promise<ResultadoRegistro> {
+  // Guardamos servicioInteres ANTES de la llamada porque no se envía al backend.
   localStorage.setItem(`servicioInteres:${datos.email}`, datos.servicioInteres);
 
   const { data: tokens } = await apiClient.post<AuthResponseBackend>(
@@ -53,23 +68,35 @@ async function registrarReal(datos: RegistroDatos): Promise<SesionAuth> {
     mapearRegistroDatosARegisterBackend(datos)
   );
 
+  // CASO ESPERADO: el backend exige verificación de correo antes de activar la cuenta.
+  // Devuelve `{accessToken: "PENDING_VERIFICATION", refreshToken: "PENDING_VERIFICATION"}`.
+  // En ese caso NO guardamos tokens (no son JWT válidos) y devolvemos PENDIENTE.
+  if (
+    tokens.accessToken === PENDING_VERIFICATION ||
+    tokens.refreshToken === PENDING_VERIFICATION
+  ) {
+    return { tipo: 'PENDIENTE_VERIFICACION', email: datos.email };
+  }
+
+  // CASO ALTERNO: el backend ya devolvió tokens reales (cuenta activa).
   tokenStorage.save(tokens.accessToken, tokens.refreshToken);
 
   const { data: perfil } = await apiClient.get<UserProfileResponseBackend>('/users/me/');
   const usuario = mapearPerfilBackendAUsuario(perfil);
 
   return {
-    usuario,
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
+    tipo: 'LISTO',
+    sesion: {
+      usuario,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    },
   };
 }
 
 async function logoutReal(): Promise<void> {
   const refresh = tokenStorage.getRefresh();
   if (!refresh) return;
-  // El backend exige el refreshToken en el body para invalidarlo.
-  // Si falla, no abortamos: queremos cerrar sesión del lado cliente igual.
   try {
     await apiClient.post('/auth/logout', { refreshToken: refresh });
   } catch {
@@ -93,9 +120,8 @@ async function obtenerPerfilReal(): Promise<Usuario> {
 }
 
 // ──────────────────────────────────────────────────────────────
-// MODO MOCK — solo se usa si VITE_USE_MOCK=true
+// MODO MOCK
 // ──────────────────────────────────────────────────────────────
-
 const usuariosMock: Array<Usuario & { contrasena: string }> = [...USUARIOS_MOCK];
 let siguienteIdMock = usuariosMock.length + 1;
 
@@ -114,19 +140,21 @@ function emitirSesionMock(u: Usuario & { contrasena: string }): SesionAuth {
 }
 
 // ──────────────────────────────────────────────────────────────
-// API PÚBLICA del módulo — lo único que el resto de la app usa.
+// API PÚBLICA
 // ──────────────────────────────────────────────────────────────
 
 export async function login(cred: LoginCredenciales): Promise<SesionAuth> {
   if (USAR_MOCK) {
-    const u = usuariosMock.find((x) => x.email === cred.email && x.contrasena === cred.contrasena);
+    const u = usuariosMock.find(
+      (x) => x.email === cred.email && x.contrasena === cred.contrasena
+    );
     if (!u) throw new Error('Credenciales inválidas');
     return emitirSesionMock(u);
   }
   return loginReal(cred);
 }
 
-export async function registrar(datos: RegistroDatos): Promise<SesionAuth> {
+export async function registrar(datos: RegistroDatos): Promise<ResultadoRegistro> {
   if (USAR_MOCK) {
     if (usuariosMock.some((u) => u.email === datos.email)) {
       throw new Error('Ya existe una cuenta con ese correo');
@@ -143,7 +171,7 @@ export async function registrar(datos: RegistroDatos): Promise<SesionAuth> {
       contrasena: datos.contrasena,
     };
     usuariosMock.push(nuevo);
-    return emitirSesionMock(nuevo);
+    return { tipo: 'LISTO', sesion: emitirSesionMock(nuevo) };
   }
   return registrarReal(datos);
 }

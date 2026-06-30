@@ -5,6 +5,7 @@ import {
   logout as logoutRequest,
   registrar as registrarRequest,
   obtenerPerfil as obtenerPerfilRequest,
+  type ResultadoRegistro,
 } from '../api/authService';
 import { tokenStorage } from '../api/client';
 
@@ -12,7 +13,7 @@ interface AuthContextValue {
   usuario: Usuario | null;
   cargando: boolean;
   iniciarSesion: (credenciales: LoginCredenciales) => Promise<Usuario>;
-  registrarse: (datos: RegistroDatos) => Promise<Usuario>;
+  registrarse: (datos: RegistroDatos) => Promise<ResultadoRegistro>;
   cerrarSesion: () => Promise<void>;
   marcarContrasenaActualizada: () => void;
 }
@@ -25,9 +26,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cargando, setCargando] = useState(true);
 
-  // Recuperación de sesión al montar la app.
-  // Si hay accessToken guardado, validamos contra /users/me; si el backend lo
-  // rechaza, el interceptor de axios se encarga del refresh o limpia tokens.
   useEffect(() => {
     let activo = true;
     async function restaurar() {
@@ -42,7 +40,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(perfil));
         setUsuario(perfil);
       } catch {
-        // Tokens inválidos / expirados sin posibilidad de refresh → limpiamos.
         tokenStorage.clear();
         localStorage.removeItem(STORAGE_KEY);
         if (activo) setUsuario(null);
@@ -56,8 +53,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Escuchamos el evento de logout forzado que dispara el interceptor de axios
-  // cuando el refresh token falla.
   useEffect(() => {
     function onForceLogout() {
       tokenStorage.clear();
@@ -80,10 +75,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return sesion.usuario;
   }
 
-  async function registrarse(datos: RegistroDatos) {
-    const sesion = await registrarRequest(datos);
-    guardarSesion(sesion);
-    return sesion.usuario;
+  async function registrarse(datos: RegistroDatos): Promise<ResultadoRegistro> {
+    const resultado = await registrarRequest(datos);
+    // Solo creamos sesión si el backend ya activó la cuenta. Si está pendiente
+    // de verificación, devolvemos el resultado para que la página muestre el
+    // mensaje correspondiente.
+    if (resultado.tipo === 'LISTO') {
+      guardarSesion(resultado.sesion);
+    }
+    return resultado;
   }
 
   async function cerrarSesion() {
@@ -102,7 +102,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ usuario, cargando, iniciarSesion, registrarse, cerrarSesion, marcarContrasenaActualizada }}
+      value={{
+        usuario,
+        cargando,
+        iniciarSesion,
+        registrarse,
+        cerrarSesion,
+        marcarContrasenaActualizada,
+      }}
     >
       {children}
     </AuthContext.Provider>

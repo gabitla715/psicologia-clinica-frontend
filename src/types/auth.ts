@@ -1,12 +1,30 @@
-// ============================================================
-// TIPOS DEL BACKEND — espejo exacto del contrato HTTP.
-// No los cambies si no cambia el backend.
-// ============================================================
 export type RolBackend = 'STUDENT' | 'SPECIALIST' | 'ADMIN' | 'COORDINATOR';
 
 export interface AuthResponseBackend {
   accessToken: string;
   refreshToken: string;
+}
+
+export interface StudentDataBackend {
+  carrera: string;
+  term: string;
+  birthDate: string;
+  address: string;
+  nationality: string;
+  ethnicity: string;
+  gender: string;
+  sex: string;
+  hasDisability: boolean;
+  disabilityType?: string;
+  disabilityPercentage?: number;
+  conadisId?: string;
+  academicSchedule?: string;
+}
+
+export interface SpecialistDataBackend {
+  id: number;
+  specialty: string;
+  professionalCode: string;
 }
 
 export interface UserProfileResponseBackend {
@@ -18,26 +36,8 @@ export interface UserProfileResponseBackend {
   phone: string;
   role: RolBackend;
   isActive: boolean;
-  studentData?: {
-    carrera: string;
-    term: string;
-    birthDate: string;
-    address: string;
-    nationality: string;
-    ethnicity: string;
-    gender: string;
-    sex: string;
-    hasDisability: boolean;
-    disabilityType?: string;
-    disabilityPercentage?: number;
-    conadisId?: string;
-    academicSchedule?: string;
-  } | null;
-  specialistData?: {
-    id: number;
-    specialty: string;
-    professionalCode: string;
-  } | null;
+  studentData?: StudentDataBackend | null;
+  specialistData?: SpecialistDataBackend | null;
 }
 
 export interface LoginRequestBackend {
@@ -54,7 +54,7 @@ export interface StudentRegisterRequestBackend {
   phone: string;
   carrera: string;
   term: string;
-  birthDate: string; // ISO yyyy-MM-dd
+  birthDate: string;
   address: string;
   nationality: string;
   ethnicity: string;
@@ -68,10 +68,30 @@ export interface StudentRegisterRequestBackend {
 
 // ============================================================
 // TIPOS DEL FRONTEND — lo que la UI consume.
-// Mantienen los nombres en español que ya usa la app.
 // ============================================================
 export type Rol = 'ADMIN' | 'PSICOLOGO' | 'COORDINADOR' | 'ESTUDIANTE';
 export type ServicioPsicologico = 'CLINICA' | 'GENERAL';
+
+export interface DatosEstudiante {
+  carrera: string;
+  semestre: string;
+  fechaNacimiento: string;
+  direccion: string;
+  nacionalidad: string;
+  etnia: string;
+  genero: string;
+  sexo: string;
+  tieneDiscapacidad: boolean;
+  tipoDiscapacidad?: string;
+  porcentajeDiscapacidad?: number;
+  conadisId?: string;
+}
+
+export interface DatosEspecialista {
+  id: number;
+  especialidad: string;
+  codigoProfesional: string;
+}
 
 export interface Usuario {
   id: number;
@@ -79,9 +99,13 @@ export interface Usuario {
   nombres: string;
   apellidos: string;
   email: string;
+  telefono?: string;
   rol: Rol;
   debeCambiarContrasena: boolean;
   servicioInteres?: ServicioPsicologico;
+  // Datos específicos por rol (solo presentes en el rol correspondiente)
+  datosEstudiante?: DatosEstudiante;
+  datosEspecialista?: DatosEspecialista;
 }
 
 export interface SesionAuth {
@@ -96,39 +120,29 @@ export interface LoginCredenciales {
 }
 
 export interface RegistroDatos {
-  // Identificación y credenciales
   nombres: string;
   apellidos: string;
   identificacion: string;
   email: string;
   contrasena: string;
   telefono: string;
-
-  // Datos académicos
   carrera: string;
   semestre: string;
-
-  // Datos demográficos
-  fechaNacimiento: string; // yyyy-MM-dd
+  fechaNacimiento: string;
   direccion: string;
   nacionalidad: string;
   etnia: string;
   genero: string;
   sexo: string;
-
-  // Discapacidad
   tieneDiscapacidad: boolean;
   tipoDiscapacidad?: string;
   porcentajeDiscapacidad?: number;
   conadisId?: string;
-
-  // Preferencia local (no se envía al backend, se guarda en el cliente)
   servicioInteres: ServicioPsicologico;
 }
 
 // ============================================================
 // MAPPERS — traducen entre formato backend y formato frontend.
-// Toda la "fealdad" del desajuste vive aquí, no en componentes.
 // ============================================================
 const ROL_BACKEND_A_FRONT: Record<RolBackend, Rol> = {
   STUDENT: 'ESTUDIANTE',
@@ -138,24 +152,49 @@ const ROL_BACKEND_A_FRONT: Record<RolBackend, Rol> = {
 };
 
 export function mapearPerfilBackendAUsuario(perfil: UserProfileResponseBackend): Usuario {
-  // El backend no expone todavía un flag debeCambiarContrasena ni servicioInteres;
-  // los recuperamos de localStorage si el usuario los registró desde esta app.
   const servicioGuardado = localStorage.getItem(`servicioInteres:${perfil.email}`);
+
+  const datosEstudiante: DatosEstudiante | undefined = perfil.studentData
+    ? {
+        carrera: perfil.studentData.carrera,
+        semestre: perfil.studentData.term,
+        fechaNacimiento: perfil.studentData.birthDate,
+        direccion: perfil.studentData.address,
+        nacionalidad: perfil.studentData.nationality,
+        etnia: perfil.studentData.ethnicity,
+        genero: perfil.studentData.gender,
+        sexo: perfil.studentData.sex,
+        tieneDiscapacidad: perfil.studentData.hasDisability,
+        tipoDiscapacidad: perfil.studentData.disabilityType ?? undefined,
+        porcentajeDiscapacidad: perfil.studentData.disabilityPercentage ?? undefined,
+        conadisId: perfil.studentData.conadisId ?? undefined,
+      }
+    : undefined;
+
+  const datosEspecialista: DatosEspecialista | undefined = perfil.specialistData
+    ? {
+        id: perfil.specialistData.id,
+        especialidad: perfil.specialistData.specialty,
+        codigoProfesional: perfil.specialistData.professionalCode,
+      }
+    : undefined;
+
   return {
     id: perfil.id,
     identificacion: perfil.identification,
     nombres: perfil.firstName,
     apellidos: perfil.lastName,
     email: perfil.email,
+    telefono: perfil.phone,
     rol: ROL_BACKEND_A_FRONT[perfil.role],
     debeCambiarContrasena: false,
     servicioInteres: (servicioGuardado as ServicioPsicologico) ?? undefined,
+    datosEstudiante,
+    datosEspecialista,
   };
 }
 
-export function mapearCredencialesALoginBackend(
-  cred: LoginCredenciales
-): LoginRequestBackend {
+export function mapearCredencialesALoginBackend(cred: LoginCredenciales): LoginRequestBackend {
   return { email: cred.email, password: cred.contrasena };
 }
 
