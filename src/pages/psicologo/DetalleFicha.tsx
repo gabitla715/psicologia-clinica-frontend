@@ -332,6 +332,27 @@ export function DetalleFicha() {
         )}
       </section>
 
+      {/* Programación de citas — enlace directo con estudianteId y tipo prellenados */}
+      {!cerrada && (
+        <section className="rounded-xl border border-slate-200 bg-white p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-slate-800">Programación de citas</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Agenda una cita para este estudiante desde la ficha. La agenda completa
+                está en <Link to="/citas" className="text-brand-700 hover:underline">Agenda de citas</Link>.
+              </p>
+            </div>
+            <Link
+              to={`/citas/nueva?estudianteId=${ficha.estudianteId}&tipoPsicologia=${ficha.tipo}`}
+              className="inline-flex shrink-0 items-center rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
+            >
+              + Agendar cita
+            </Link>
+          </div>
+        </section>
+      )}
+
       {/* Cierre del caso */}
       {!cerrada ? (
         <section className="rounded-xl border border-slate-200 bg-white p-6">

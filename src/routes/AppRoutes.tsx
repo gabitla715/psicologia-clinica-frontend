@@ -21,6 +21,8 @@ import { NuevaSesion } from '../pages/psicologo/NuevaSesion';
 import { HistorialSesiones } from '../pages/psicologo/HistorialSesiones';
 import { DerivacionForm } from '../pages/psicologo/DerivacionForm';
 import { DesistimientoForm } from '../pages/psicologo/DesistimientoForm';
+import { AgendaCitas } from '../pages/psicologo/AgendaCitas';
+import { NuevaCita } from '../pages/psicologo/NuevaCita';
 import { NotFound } from '../pages/NotFound';
 import { Unauthorized } from '../pages/Unauthorized';
 
@@ -72,7 +74,15 @@ export function AppRoutes() {
             <Route path="/pacientes/:fichaId/desistimiento" element={<DesistimientoForm />} />
           </Route>
 
-          {/* Agrega aquí /citas, /reportes, /usuarios, /auditoria en los
+          {/* Sprint D: agenda de citas. */}
+          <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO', 'ADMIN']} />}>
+            <Route path="/citas" element={<AgendaCitas />} />
+          </Route>
+          <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO']} />}>
+            <Route path="/citas/nueva" element={<NuevaCita />} />
+          </Route>
+
+          {/* Agrega aquí /reportes, /usuarios, /auditoria en los
               próximos sprints. */}
         </Route>
       </Route>

@@ -13,7 +13,6 @@ const MENU: ItemMenu[] = [
   { etiqueta: 'Panel principal', ruta: '/dashboard', roles: ['ADMIN', 'PSICOLOGO', 'COORDINADOR'] },
   { etiqueta: 'Mi solicitud', ruta: '/mi-solicitud', roles: ['ESTUDIANTE'] },
   { etiqueta: 'Pacientes', ruta: '/pacientes', roles: ['ADMIN', 'PSICOLOGO', 'COORDINADOR'] },
-  { etiqueta: 'Fichas clínicas', ruta: '/fichas', roles: ['PSICOLOGO'] },
   { etiqueta: 'Agenda de citas', ruta: '/citas', roles: ['PSICOLOGO', 'COORDINADOR'] },
   { etiqueta: 'Reportes', ruta: '/reportes', roles: ['ADMIN', 'COORDINADOR'] },
   { etiqueta: 'Usuarios', ruta: '/usuarios', roles: ['ADMIN'] },
