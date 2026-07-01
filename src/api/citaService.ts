@@ -11,7 +11,7 @@
 //
 // ⚠️ Gap del backend: el estudiante puede CANCELAR una cita si
 // conoce su ID, pero no dispone de un endpoint para listar sus
-// propias citas. Documentado en INSTRUCCIONES.md para pedirlo.
+// propias citas.
 // ────────────────────────────────────────────────────────────────
 import { apiClient } from './client';
 import type { TipoPsicologia } from './fichaService';

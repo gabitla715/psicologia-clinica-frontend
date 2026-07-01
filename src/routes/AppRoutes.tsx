@@ -23,6 +23,7 @@ import { DerivacionForm } from '../pages/psicologo/DerivacionForm';
 import { DesistimientoForm } from '../pages/psicologo/DesistimientoForm';
 import { AgendaCitas } from '../pages/psicologo/AgendaCitas';
 import { NuevaCita } from '../pages/psicologo/NuevaCita';
+import { Notificaciones } from '../pages/Notificaciones';
 import { NotFound } from '../pages/NotFound';
 import { Unauthorized } from '../pages/Unauthorized';
 
@@ -81,6 +82,9 @@ export function AppRoutes() {
           <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO']} />}>
             <Route path="/citas/nueva" element={<NuevaCita />} />
           </Route>
+
+          {/* Sprint E: notificaciones in-app. Cualquier rol autenticado. */}
+          <Route path="/notificaciones" element={<Notificaciones />} />
 
           {/* Agrega aquí /reportes, /usuarios, /auditoria en los
               próximos sprints. */}

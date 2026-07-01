@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import type { Rol } from '../../types/auth';
+import { NotificacionesBadge } from './NotificacionesBadge';
 
 interface ItemMenu {
   etiqueta: string;
@@ -14,6 +15,7 @@ const MENU: ItemMenu[] = [
   { etiqueta: 'Mi solicitud', ruta: '/mi-solicitud', roles: ['ESTUDIANTE'] },
   { etiqueta: 'Pacientes', ruta: '/pacientes', roles: ['ADMIN', 'PSICOLOGO', 'COORDINADOR'] },
   { etiqueta: 'Agenda de citas', ruta: '/citas', roles: ['PSICOLOGO', 'COORDINADOR'] },
+  { etiqueta: 'Notificaciones', ruta: '/notificaciones', roles: ['ADMIN', 'PSICOLOGO', 'COORDINADOR', 'ESTUDIANTE'] },
   { etiqueta: 'Reportes', ruta: '/reportes', roles: ['ADMIN', 'COORDINADOR'] },
   { etiqueta: 'Usuarios', ruta: '/usuarios', roles: ['ADMIN'] },
   { etiqueta: 'Auditoría', ruta: '/auditoria', roles: ['ADMIN', 'PSICOLOGO'] },
@@ -65,12 +67,15 @@ export function AppLayout() {
             </p>
             <p className="text-xs text-slate-500">{NOMBRE_ROL[usuario.rol]}</p>
           </div>
-          <button
-            onClick={() => cerrarSesion()}
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
-          >
-            Cerrar sesión
-          </button>
+          <div className="flex items-center gap-3">
+            <NotificacionesBadge />
+            <button
+              onClick={() => cerrarSesion()}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+            >
+              Cerrar sesión
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 p-6">
