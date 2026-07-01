@@ -16,6 +16,11 @@ import { NuevaFicha } from '../pages/psicologo/NuevaFicha';
 import { DetalleFicha } from '../pages/psicologo/DetalleFicha';
 import { EntrevistaInicialForm } from '../pages/psicologo/EntrevistaInicialForm';
 import { ConsentimientoForm } from '../pages/psicologo/ConsentimientoForm';
+import { PlanIntervencionForm } from '../pages/psicologo/PlanIntervencionForm';
+import { NuevaSesion } from '../pages/psicologo/NuevaSesion';
+import { HistorialSesiones } from '../pages/psicologo/HistorialSesiones';
+import { DerivacionForm } from '../pages/psicologo/DerivacionForm';
+import { DesistimientoForm } from '../pages/psicologo/DesistimientoForm';
 import { NotFound } from '../pages/NotFound';
 import { Unauthorized } from '../pages/Unauthorized';
 
@@ -34,8 +39,6 @@ export function AppRoutes() {
       <Route element={<PrivateRoute />}>
         <Route path="/cambiar-contrasena" element={<ChangePasswordPage />} />
 
-        {/* Elegir servicio: solo estudiantes, FUERA del AppLayout porque
-            no debe mostrar el menú lateral. */}
         <Route element={<PrivateRoute rolesPermitidos={['ESTUDIANTE']} />}>
           <Route path="/elegir-servicio" element={<ElegirServicio />} />
         </Route>
@@ -51,19 +54,26 @@ export function AppRoutes() {
             <Route path="/mi-solicitud" element={<MiSolicitud />} />
           </Route>
 
-          {/* Sprint B: módulos clínicos del psicólogo. */}
+          {/* Sprint B: apertura y consulta de fichas. */}
           <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO', 'ADMIN', 'COORDINADOR']} />}>
             <Route path="/pacientes" element={<MisPacientes />} />
             <Route path="/pacientes/:fichaId" element={<DetalleFicha />} />
+            <Route path="/pacientes/:fichaId/sesiones" element={<HistorialSesiones />} />
           </Route>
           <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO']} />}>
             <Route path="/pacientes/nuevo" element={<NuevaFicha />} />
             <Route path="/pacientes/:fichaId/entrevista" element={<EntrevistaInicialForm />} />
             <Route path="/pacientes/:fichaId/consentimiento" element={<ConsentimientoForm />} />
+
+            {/* Sprint C: plan, sesiones, cierre. */}
+            <Route path="/pacientes/:fichaId/plan" element={<PlanIntervencionForm />} />
+            <Route path="/pacientes/:fichaId/sesiones/nueva" element={<NuevaSesion />} />
+            <Route path="/pacientes/:fichaId/derivacion" element={<DerivacionForm />} />
+            <Route path="/pacientes/:fichaId/desistimiento" element={<DesistimientoForm />} />
           </Route>
 
-          {/* Agrega aquí /citas, /sesiones, /reportes, /usuarios, /auditoria
-              en los próximos sprints. */}
+          {/* Agrega aquí /citas, /reportes, /usuarios, /auditoria en los
+              próximos sprints. */}
         </Route>
       </Route>
 
