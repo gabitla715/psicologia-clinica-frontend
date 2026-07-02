@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminUserService, type RegistrarEspecialistaRequest } from '../../api/adminUserService';
 import { extraerMensajeError } from '../../api/client';
+import {
+  esIdentificacionValida,
+  REGEX_TELEFONO_EC,
+  limpiarSoloDigitos,
+} from '../../lib/validators';
 
 const VACIO: RegistrarEspecialistaRequest = {
   identification: '',
@@ -13,9 +18,28 @@ const VACIO: RegistrarEspecialistaRequest = {
   professionalCode: '',
 };
 
+type Errores = Partial<Record<keyof RegistrarEspecialistaRequest, string>>;
+
+function validar(datos: RegistrarEspecialistaRequest): Errores {
+  const errores: Errores = {};
+  if (!esIdentificacionValida(datos.identification)) {
+    errores.identification = 'Cédula ecuatoriana inválida o pasaporte fuera de formato';
+  }
+  if (!REGEX_TELEFONO_EC.test(datos.phone)) {
+    errores.phone = 'Debe ser un número ecuatoriano (10 dígitos comenzando con 0)';
+  }
+  if (!datos.firstName.trim()) errores.firstName = 'Los nombres son obligatorios';
+  if (!datos.lastName.trim()) errores.lastName = 'Los apellidos son obligatorios';
+  if (!/^\S+@\S+\.\S+$/.test(datos.email)) errores.email = 'Correo no válido';
+  if (!datos.specialty.trim()) errores.specialty = 'La especialidad es obligatoria';
+  if (!datos.professionalCode.trim()) errores.professionalCode = 'El código profesional es obligatorio';
+  return errores;
+}
+
 export function RegistrarEspecialista() {
   const navigate = useNavigate();
   const [datos, setDatos] = useState<RegistrarEspecialistaRequest>(VACIO);
+  const [errores, setErrores] = useState<Errores>({});
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,6 +49,10 @@ export function RegistrarEspecialista() {
 
   async function manejarEnvio(e: React.FormEvent) {
     e.preventDefault();
+    const erroresValidacion = validar(datos);
+    setErrores(erroresValidacion);
+    if (Object.keys(erroresValidacion).length > 0) return;
+
     setEnviando(true);
     setError(null);
     try {
@@ -53,24 +81,26 @@ export function RegistrarEspecialista() {
 
       <form onSubmit={manejarEnvio} className="mt-6 space-y-4 rounded-xl border border-slate-200 bg-white p-6">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Campo label="Cédula *">
+          <Campo label="Cédula *" error={errores.identification}>
             <input
               required
               value={datos.identification}
-              onChange={(e) => actualizar('identification', e.target.value)}
+              onChange={(e) => actualizar('identification', limpiarSoloDigitos(e.target.value, 10))}
               className="campo-input"
               maxLength={10}
+              inputMode="numeric"
             />
           </Campo>
-          <Campo label="Teléfono *">
+          <Campo label="Teléfono *" error={errores.phone}>
             <input
               required
               value={datos.phone}
-              onChange={(e) => actualizar('phone', e.target.value)}
+              onChange={(e) => actualizar('phone', limpiarSoloDigitos(e.target.value, 10))}
               className="campo-input"
+              inputMode="numeric"
             />
           </Campo>
-          <Campo label="Nombres *">
+          <Campo label="Nombres *" error={errores.firstName}>
             <input
               required
               value={datos.firstName}
@@ -78,7 +108,7 @@ export function RegistrarEspecialista() {
               className="campo-input"
             />
           </Campo>
-          <Campo label="Apellidos *">
+          <Campo label="Apellidos *" error={errores.lastName}>
             <input
               required
               value={datos.lastName}
@@ -88,7 +118,7 @@ export function RegistrarEspecialista() {
           </Campo>
         </div>
 
-        <Campo label="Correo institucional *">
+        <Campo label="Correo institucional *" error={errores.email}>
           <input
             required
             type="email"
@@ -99,7 +129,7 @@ export function RegistrarEspecialista() {
         </Campo>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Campo label="Especialidad *">
+          <Campo label="Especialidad *" error={errores.specialty}>
             <input
               required
               placeholder="Psicología Clínica / Psicología General"
@@ -108,7 +138,7 @@ export function RegistrarEspecialista() {
               className="campo-input"
             />
           </Campo>
-          <Campo label="Código profesional (Senescyt) *">
+          <Campo label="Código profesional (Senescyt) *" error={errores.professionalCode}>
             <input
               required
               value={datos.professionalCode}
@@ -139,11 +169,12 @@ export function RegistrarEspecialista() {
   );
 }
 
-function Campo({ label, children }: { label: string; children: React.ReactNode }) {
+function Campo({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
       {children}
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }

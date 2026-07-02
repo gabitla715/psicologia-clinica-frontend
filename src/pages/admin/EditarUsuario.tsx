@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { adminUserService, type ActualizarUsuarioRequest } from '../../api/adminUserService';
 import { extraerMensajeError } from '../../api/client';
 import { CARRERAS_UCE } from '../../lib/carreras-uce';
+import { REGEX_TELEFONO_EC, limpiarSoloDigitos } from '../../lib/validators';
 import type { Usuario } from '../../types/auth';
 
 // Agrupa la lista plana de carreras por facultad (mismo criterio que RegisterPage).
@@ -27,6 +28,7 @@ export function EditarUsuario() {
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
+  const [errorTelefono, setErrorTelefono] = useState<string | null>(null);
 
   const grupos = useMemo(() => agruparCarrerasPorFacultad(), []);
 
@@ -85,6 +87,13 @@ export function EditarUsuario() {
   async function manejarEnvio(e: React.FormEvent) {
     e.preventDefault();
     if (!form) return;
+
+    if (form.phone && !REGEX_TELEFONO_EC.test(form.phone)) {
+      setErrorTelefono('Debe ser un número ecuatoriano (10 dígitos comenzando con 0)');
+      return;
+    }
+    setErrorTelefono(null);
+
     setGuardando(true);
     setErrorGuardar(null);
     try {
@@ -120,6 +129,20 @@ export function EditarUsuario() {
           <legend className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Datos generales
           </legend>
+          <Campo label="Cédula / identificación">
+            <input
+              value={usuario.identificacion}
+              disabled
+              className="campo-input cursor-not-allowed bg-slate-50 text-slate-500"
+            />
+            <p className="mt-1 text-xs text-slate-400">
+              No editable por ahora: el backend todavía no acepta este campo en la
+              actualización de usuario. Si el estudiante/especialista registró mal su
+              cédula, pídele a tu compañero que agregue{' '}
+              <code className="rounded bg-slate-100 px-1">identification</code> a{' '}
+              <code className="rounded bg-slate-100 px-1">UpdateUserByAdminRequest</code>.
+            </p>
+          </Campo>
           <div className="grid gap-4 sm:grid-cols-2">
             <Campo label="Nombres *">
               <input
@@ -147,11 +170,12 @@ export function EditarUsuario() {
               className="campo-input"
             />
           </Campo>
-          <Campo label="Teléfono">
+          <Campo label="Teléfono" error={errorTelefono ?? undefined}>
             <input
               value={form.phone ?? ''}
-              onChange={(e) => actualizarCampo('phone', e.target.value)}
+              onChange={(e) => actualizarCampo('phone', limpiarSoloDigitos(e.target.value, 10))}
               className="campo-input"
+              inputMode="numeric"
             />
           </Campo>
           <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -334,11 +358,12 @@ export function EditarUsuario() {
   );
 }
 
-function Campo({ label, children }: { label: string; children: React.ReactNode }) {
+function Campo({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
       {children}
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );
 }

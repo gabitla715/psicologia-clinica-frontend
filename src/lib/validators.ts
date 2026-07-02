@@ -1,17 +1,5 @@
 import { z } from 'zod';
 
-// ──────────────────────────────────────────────────────────────
-// VALIDACIÓN DE CÉDULA ECUATORIANA (algoritmo módulo 10)
-// ──────────────────────────────────────────────────────────────
-//
-// Reglas oficiales del Registro Civil:
-// - Debe tener exactamente 10 dígitos numéricos.
-// - Los dos primeros corresponden al código de provincia (01 a 24, o 30).
-// - El tercer dígito debe ser menor a 6 (0-5) para personas naturales.
-// - Los primeros 9 dígitos se multiplican alternadamente por [2,1,2,1,2,1,2,1,2].
-//   Si el resultado de cada multiplicación es ≥ 10, se le restan 9.
-// - Se suman todos los resultados.
-// - El verificador esperado = (10 - (suma % 10)) % 10 == último dígito.
 export function esCedulaEcuatorianaValida(cedula: string): boolean {
   if (!/^\d{10}$/.test(cedula)) return false;
 
@@ -39,7 +27,7 @@ export function esCedulaEcuatorianaValida(cedula: string): boolean {
  * Valida una identificación que puede ser cédula ecuatoriana (10 dígitos)
  * o pasaporte (6 a 20 caracteres alfanuméricos).
  */
-function esIdentificacionValida(valor: string): boolean {
+export function esIdentificacionValida(valor: string): boolean {
   // Si tiene exactamente 10 dígitos, debe pasar el algoritmo de cédula.
   if (/^\d{10}$/.test(valor)) {
     return esCedulaEcuatorianaValida(valor);
@@ -52,7 +40,7 @@ function esIdentificacionValida(valor: string): boolean {
 // Expresiones regulares reutilizables
 // ──────────────────────────────────────────────────────────────
 const REGEX_SOLO_LETRAS = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s'.-]+$/;
-const REGEX_TELEFONO_EC = /^0\d{9}$/; // Ecuador: 10 dígitos empezando con 0
+export const REGEX_TELEFONO_EC = /^0\d{9}$/; // Ecuador: 10 dígitos empezando con 0
 
 // ──────────────────────────────────────────────────────────────
 // LOGIN

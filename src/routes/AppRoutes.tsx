@@ -60,8 +60,14 @@ export function AppRoutes() {
             <Route path="/mi-solicitud" element={<MiSolicitud />} />
           </Route>
 
-          {/* Sprint B: apertura y consulta de fichas. */}
-          <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO', 'ADMIN', 'COORDINADOR']} />}>
+          {/* Sprint B: apertura y consulta de fichas.
+              Restringido solo a PSICOLOGO: GET /fichas/mis-fichas exige que
+              el usuario autenticado tenga un perfil de Specialist en el
+              backend (FichaService.obtenerFichasPorEspecialista busca
+              Specialist por baseUserId y lanza "Especialista no encontrado"
+              si no existe). ADMIN/COORDINATOR no tienen ese perfil, así que
+              antes rompían con ese error al entrar a /pacientes. */}
+          <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO']} />}>
             <Route path="/pacientes" element={<MisPacientes />} />
             <Route path="/pacientes/:fichaId" element={<DetalleFicha />} />
             <Route path="/pacientes/:fichaId/sesiones" element={<HistorialSesiones />} />
@@ -78,11 +84,12 @@ export function AppRoutes() {
             <Route path="/pacientes/:fichaId/desistimiento" element={<DesistimientoForm />} />
           </Route>
 
-          {/* Sprint D: agenda de citas. */}
-          <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO', 'ADMIN']} />}>
-            <Route path="/citas" element={<AgendaCitas />} />
-          </Route>
+          {/* Sprint D: agenda de citas.
+              Mismo problema que /pacientes: GET /citas/mis-citas exige
+              perfil de Specialist (CitaService.obtenerPorEspecialista). Se
+              restringe a PSICOLOGO para evitar el mismo error con ADMIN. */}
           <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO']} />}>
+            <Route path="/citas" element={<AgendaCitas />} />
             <Route path="/citas/nueva" element={<NuevaCita />} />
           </Route>
 

@@ -11,7 +11,7 @@ export function NotificacionesBadge() {
   return (
     <Link
       to="/notificaciones"
-      className="relative inline-flex items-center justify-center rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100"
+      className="relative inline-flex items-center justify-center rounded-lg bg-white p-2 text-brand-800 hover:bg-brand-50"
       aria-label={noLeidas > 0 ? `Notificaciones, ${noLeidas} sin leer` : 'Notificaciones'}
       title="Notificaciones"
     >
