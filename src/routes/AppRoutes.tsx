@@ -39,7 +39,7 @@ export function AppRoutes() {
       <Route path="/ingresar" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
       <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
-      <Route path="/restablecer-contrasena" element={<ResetPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/no-autorizado" element={<Unauthorized />} />
 
       <Route element={<PrivateRoute />}>

@@ -8,7 +8,7 @@ import { extraerMensajeError } from '../../api/client';
 
 /**
  * Pantalla a la que llega el usuario desde el enlace en su correo:
- *   /restablecer-contrasena?token=XXXX
+ *   /reset-password?token=XXXX
  * Si no hay token en la URL, mostramos un error claro.
  */
 export function ResetPasswordPage() {
