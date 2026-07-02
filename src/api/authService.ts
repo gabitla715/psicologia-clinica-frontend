@@ -164,6 +164,7 @@ export async function registrar(datos: RegistroDatos): Promise<ResultadoRegistro
       apellidos: datos.apellidos,
       email: datos.email,
       rol: 'ESTUDIANTE',
+      activo: true,
       debeCambiarContrasena: false,
       contrasena: datos.contrasena,
     };

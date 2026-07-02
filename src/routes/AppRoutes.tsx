@@ -24,6 +24,9 @@ import { DesistimientoForm } from '../pages/psicologo/DesistimientoForm';
 import { AgendaCitas } from '../pages/psicologo/AgendaCitas';
 import { NuevaCita } from '../pages/psicologo/NuevaCita';
 import { Notificaciones } from '../pages/Notificaciones';
+import { UsuariosList } from '../pages/admin/UsuariosList';
+import { RegistrarEspecialista } from '../pages/admin/RegistrarEspecialista';
+import { EditarUsuario } from '../pages/admin/EditarUsuario';
 import { NotFound } from '../pages/NotFound';
 import { Unauthorized } from '../pages/Unauthorized';
 
@@ -86,8 +89,18 @@ export function AppRoutes() {
           {/* Sprint E: notificaciones in-app. Cualquier rol autenticado. */}
           <Route path="/notificaciones" element={<Notificaciones />} />
 
-          {/* Agrega aquí /reportes, /usuarios, /auditoria en los
-              próximos sprints. */}
+          {/* Sprint F: panel de administración de usuarios. ADMIN y
+              COORDINATOR según AdminUserController (hasAnyRole ADMIN, COORDINATOR). */}
+          <Route element={<PrivateRoute rolesPermitidos={['ADMIN', 'COORDINADOR']} />}>
+            <Route path="/usuarios" element={<UsuariosList />} />
+            <Route path="/usuarios/nuevo-especialista" element={<RegistrarEspecialista />} />
+            <Route path="/usuarios/:userId" element={<EditarUsuario />} />
+          </Route>
+
+          {/* Agrega aquí /reportes y /auditoria en los próximos sprints.
+              Nota: /auditoria no se implementó en Sprint F porque
+              SecurityAuditLogEntity no está expuesto por ningún
+              controlador REST del backend (ver INSTRUCCIONES.md). */}
         </Route>
       </Route>
 

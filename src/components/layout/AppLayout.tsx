@@ -17,7 +17,7 @@ const MENU: ItemMenu[] = [
   { etiqueta: 'Agenda de citas', ruta: '/citas', roles: ['PSICOLOGO', 'COORDINADOR'] },
   { etiqueta: 'Notificaciones', ruta: '/notificaciones', roles: ['ADMIN', 'PSICOLOGO', 'COORDINADOR', 'ESTUDIANTE'] },
   { etiqueta: 'Reportes', ruta: '/reportes', roles: ['ADMIN', 'COORDINADOR'] },
-  { etiqueta: 'Usuarios', ruta: '/usuarios', roles: ['ADMIN'] },
+  { etiqueta: 'Usuarios', ruta: '/usuarios', roles: ['ADMIN', 'COORDINADOR'] },
   { etiqueta: 'Auditoría', ruta: '/auditoria', roles: ['ADMIN', 'PSICOLOGO'] },
 ];
 

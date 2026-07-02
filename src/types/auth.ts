@@ -88,6 +88,7 @@ export interface DatosEstudiante {
   tipoDiscapacidad?: string;
   porcentajeDiscapacidad?: number;
   conadisId?: string;
+  horarioAcademico?: string;
 }
 
 export interface DatosEspecialista {
@@ -104,6 +105,7 @@ export interface Usuario {
   email: string;
   telefono?: string;
   rol: Rol;
+  activo: boolean;
   debeCambiarContrasena: boolean;
   servicioInteres?: ServicioPsicologico;
   datosEstudiante?: DatosEstudiante;
@@ -172,6 +174,7 @@ export function mapearPerfilBackendAUsuario(perfil: UserProfileResponseBackend):
         tipoDiscapacidad: perfil.studentData.disabilityType ?? undefined,
         porcentajeDiscapacidad: perfil.studentData.disabilityPercentage ?? undefined,
         conadisId: perfil.studentData.conadisId ?? undefined,
+        horarioAcademico: perfil.studentData.academicSchedule ?? undefined,
       }
     : undefined;
 
@@ -191,6 +194,7 @@ export function mapearPerfilBackendAUsuario(perfil: UserProfileResponseBackend):
     email: perfil.email,
     telefono: perfil.phone,
     rol: ROL_BACKEND_A_FRONT[perfil.role],
+    activo: perfil.isActive,
     debeCambiarContrasena: false,
     servicioInteres: (servicioGuardado as ServicioPsicologico) ?? undefined,
     datosEstudiante,
