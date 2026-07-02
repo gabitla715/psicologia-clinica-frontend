@@ -23,6 +23,7 @@ import { DerivacionForm } from '../pages/psicologo/DerivacionForm';
 import { DesistimientoForm } from '../pages/psicologo/DesistimientoForm';
 import { AgendaCitas } from '../pages/psicologo/AgendaCitas';
 import { NuevaCita } from '../pages/psicologo/NuevaCita';
+import { CalendarioDisponibilidad } from '../pages/psicologo/CalendarioDisponibilidad';
 import { Notificaciones } from '../pages/Notificaciones';
 import { UsuariosList } from '../pages/admin/UsuariosList';
 import { RegistrarEspecialista } from '../pages/admin/RegistrarEspecialista';
@@ -39,7 +40,7 @@ export function AppRoutes() {
       <Route path="/ingresar" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
       <Route path="/recuperar-contrasena" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/restablecer-contrasena" element={<ResetPasswordPage />} />
       <Route path="/no-autorizado" element={<Unauthorized />} />
 
       <Route element={<PrivateRoute />}>
@@ -60,13 +61,7 @@ export function AppRoutes() {
             <Route path="/mi-solicitud" element={<MiSolicitud />} />
           </Route>
 
-          {/* Sprint B: apertura y consulta de fichas.
-              Restringido solo a PSICOLOGO: GET /fichas/mis-fichas exige que
-              el usuario autenticado tenga un perfil de Specialist en el
-              backend (FichaService.obtenerFichasPorEspecialista busca
-              Specialist por baseUserId y lanza "Especialista no encontrado"
-              si no existe). ADMIN/COORDINATOR no tienen ese perfil, así que
-              antes rompían con ese error al entrar a /pacientes. */}
+
           <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO']} />}>
             <Route path="/pacientes" element={<MisPacientes />} />
             <Route path="/pacientes/:fichaId" element={<DetalleFicha />} />
@@ -84,20 +79,17 @@ export function AppRoutes() {
             <Route path="/pacientes/:fichaId/desistimiento" element={<DesistimientoForm />} />
           </Route>
 
-          {/* Sprint D: agenda de citas.
-              Mismo problema que /pacientes: GET /citas/mis-citas exige
-              perfil de Specialist (CitaService.obtenerPorEspecialista). Se
-              restringe a PSICOLOGO para evitar el mismo error con ADMIN. */}
+   
           <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO']} />}>
             <Route path="/citas" element={<AgendaCitas />} />
             <Route path="/citas/nueva" element={<NuevaCita />} />
+            <Route path="/citas/calendario" element={<CalendarioDisponibilidad />} />
           </Route>
 
-          {/* Sprint E: notificaciones in-app. Cualquier rol autenticado. */}
+
           <Route path="/notificaciones" element={<Notificaciones />} />
 
-          {/* Sprint F: panel de administración de usuarios. ADMIN y
-              COORDINATOR según AdminUserController (hasAnyRole ADMIN, COORDINATOR). */}
+
           <Route element={<PrivateRoute rolesPermitidos={['ADMIN', 'COORDINADOR']} />}>
             <Route path="/usuarios" element={<UsuariosList />} />
             <Route path="/usuarios/nuevo-especialista" element={<RegistrarEspecialista />} />

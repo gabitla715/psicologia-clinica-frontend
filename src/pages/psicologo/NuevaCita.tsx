@@ -32,12 +32,15 @@ export function NuevaCita() {
   // Permite prellenar el estudiante y el tipo desde la ficha (DetalleFicha).
   const estudianteIdParam = searchParams.get('estudianteId') ?? '';
   const tipoParam = (searchParams.get('tipoPsicologia') as TipoPsicologia | null) ?? 'CLINICA';
+  // Permite prellenar fecha/hora desde un slot vacío del calendario de disponibilidad.
+  const fechaParam = searchParams.get('fecha') ?? '';
+  const horaParam = searchParams.get('hora') ?? '';
 
   const [form, setForm] = useState<Formulario>({
     estudianteId: estudianteIdParam,
     tipoPsicologia: tipoParam,
-    fecha: '',
-    hora: '',
+    fecha: fechaParam,
+    hora: horaParam,
     duracionMinutos: 50,
     tipoCita: 'PRIMERA_CONVOCATORIA',
     modalidad: 'Presencial',
@@ -99,10 +102,6 @@ export function NuevaCita() {
     <form onSubmit={enviar} className="mx-auto max-w-3xl space-y-6">
       <header>
         <h1 className="text-xl font-semibold text-slate-800">Agendar cita</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          El backend verifica automáticamente el solapamiento de horarios con tus otras
-          citas. Si el horario está ocupado, la solicitud fallará y podrás elegir otro.
-        </p>
       </header>
 
       {/* Estudiante y servicio */}

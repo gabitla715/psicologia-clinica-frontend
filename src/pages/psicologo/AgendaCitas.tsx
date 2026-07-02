@@ -109,12 +109,20 @@ export function AgendaCitas() {
             lo que necesitas.
           </p>
         </div>
-        <Link
-          to="/citas/nueva"
-          className="inline-flex shrink-0 items-center rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
-        >
-          + Agendar cita
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            to="/citas/calendario"
+            className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          >
+            Ver calendario
+          </Link>
+          <Link
+            to="/citas/nueva"
+            className="inline-flex items-center rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
+          >
+            + Agendar cita
+          </Link>
+        </div>
       </div>
 
       {/* Filtros */}
