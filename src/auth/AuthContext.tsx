@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { SesionAuth, Usuario, LoginCredenciales, RegistroDatos } from '../types/auth';
 import {
   login as loginRequest,
@@ -25,6 +26,7 @@ const STORAGE_KEY = 'sesionUsuario';
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cargando, setCargando] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let activo = true;
@@ -58,10 +60,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenStorage.clear();
       localStorage.removeItem(STORAGE_KEY);
       setUsuario(null);
+      // Igual que en cerrarSesion(): evita dejar la URL restringida de la
+      // sesión anterior como "from" para el próximo login.
+      navigate('/ingresar', { replace: true, state: null });
     }
     window.addEventListener('auth:logout', onForceLogout);
     return () => window.removeEventListener('auth:logout', onForceLogout);
-  }, []);
+  }, [navigate]);
 
   function guardarSesion(sesion: SesionAuth) {
     tokenStorage.save(sesion.accessToken, sesion.refreshToken);
@@ -91,6 +96,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tokenStorage.clear();
     localStorage.removeItem(STORAGE_KEY);
     setUsuario(null);
+    // Navega explícitamente a /ingresar SIN arrastrar ningún location.state
+    // previo. Si no hiciéramos esto, PrivateRoute redirigiría aquí guardando
+    // la URL en la que estaba la sesión anterior (ej. /usuarios, solo ADMIN)
+    // como "from", y el próximo login (de otro rol) intentaría volver ahí
+    // -> pantalla de "Acceso restringido". Ver bug reportado con logout
+    // admin/especialista seguido de login como estudiante.
+    navigate('/ingresar', { replace: true, state: null });
   }
 
   function marcarContrasenaActualizada() {
