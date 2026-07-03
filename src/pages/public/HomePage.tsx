@@ -24,27 +24,61 @@ export function HomePage() {
         </p>
       </section>
 
-      {/* Servicios */}
+      {/* Qué es la psicología clínica y general */}
       <section id="servicios" className="border-y border-slate-100 bg-slate-50">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">Nuestros servicios</p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-900">¿Qué tipo de atención necesitas?</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-900">¿Qué tipo de atención ofrecemos?</h2>
 
           <div className="mt-8 grid gap-6 sm:grid-cols-2">
-            <ServicioCard
-              icono={<Stethoscope className="h-6 w-6" />}
-              titulo="Psicología Clínica"
-              descripcion="Evaluación y tratamiento de dificultades emocionales o de salud mental que requieren
-              una intervención terapéutica estructurada: ansiedad, estados de ánimo, crisis, entre otras."
-              servicio="CLINICA"
-            />
-            <ServicioCard
-              icono={<Users className="h-6 w-6" />}
-              titulo="Psicología General"
-              descripcion="Orientación, acompañamiento y apoyo psicoeducativo para situaciones del día a día:
-              adaptación académica, manejo del estrés, relaciones interpersonales y desarrollo personal."
-              servicio="GENERAL"
-            />
+            <div className="flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-6">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
+                <Stethoscope className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Psicología Clínica</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  Evaluación y tratamiento de dificultades emocionales o de salud mental que
+                  requieren una intervención terapéutica estructurada: ansiedad, estados de
+                  ánimo, crisis, entre otras.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-6">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
+                <Users className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Psicología General</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  Orientación, acompañamiento y apoyo psicoeducativo para situaciones del día a
+                  día: adaptación académica, manejo del estrés, relaciones interpersonales y
+                  desarrollo personal.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Un único llamado a la acción: ya no se elige el servicio aquí.
+              El estudiante se registra o ingresa, y elige el servicio dentro
+              de la plataforma (ElegirServicio.tsx, ya existente). */}
+          <div className="mt-10 flex flex-col items-center gap-4 rounded-2xl border border-brand-100 bg-white p-8 text-center shadow-sm sm:p-10">
+            <p className="max-w-xl text-sm leading-relaxed text-slate-600">
+              ¿Necesitas más información o quieres iniciar tu proceso de atención? Crea tu
+              cuenta o ingresa si ya la tienes: dentro de la plataforma podrás elegir el
+              servicio que necesitas y dar seguimiento a tu solicitud.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link to="/registro" className="btn-primary px-8 py-3 text-sm font-semibold">
+                Regístrate
+              </Link>
+              <Link
+                to="/ingresar"
+                className="inline-flex items-center justify-center rounded-lg border border-brand-200 px-8 py-3 text-sm font-semibold text-brand-700 transition hover:bg-brand-50"
+              >
+                Ingresa
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -100,31 +134,6 @@ export function HomePage() {
       <footer className="border-t border-slate-100 px-4 py-8 text-center text-xs text-slate-400 sm:px-6">
         Trabajo de titulación — Ingeniería en Sistemas de Información, Universidad Central del Ecuador, 2026.
       </footer>
-    </div>
-  );
-}
-
-interface ServicioCardProps {
-  icono: React.ReactNode;
-  titulo: string;
-  descripcion: string;
-  servicio: 'CLINICA' | 'GENERAL';
-}
-
-function ServicioCard({ icono, titulo, descripcion, servicio }: ServicioCardProps) {
-  return (
-    <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-6">
-      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
-        {icono}
-      </div>
-      <h3 className="mt-4 text-lg font-semibold text-slate-900">{titulo}</h3>
-      <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">{descripcion}</p>
-      <Link
-        to={`/ingresar?servicio=${servicio}`}
-        className="btn-primary mt-5 w-full"
-      >
-        Solicitar atención
-      </Link>
     </div>
   );
 }
