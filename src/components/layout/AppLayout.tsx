@@ -7,6 +7,8 @@ import {
   BarChart3,
   ShieldCheck,
   LogOut,
+  UserCog,
+  GraduationCap,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
@@ -31,6 +33,8 @@ const MENU: ItemMenu[] = [
   { etiqueta: 'Mi solicitud', ruta: '/mi-solicitud', icono: ClipboardList, roles: ['ESTUDIANTE'] },
   { etiqueta: 'Pacientes', ruta: '/pacientes', icono: ClipboardList, roles: ['PSICOLOGO'] },
   { etiqueta: 'Agenda de citas', ruta: '/citas', icono: CalendarDays, roles: ['PSICOLOGO'] },
+  { etiqueta: 'Solicitudes', ruta: '/coordinador/solicitudes', icono: UserCog, roles: ['COORDINADOR'] },
+  { etiqueta: 'Estudiantes', ruta: '/coordinador/estudiantes', icono: GraduationCap, roles: ['COORDINADOR'] },
   { etiqueta: 'Usuarios', ruta: '/usuarios', icono: Users, roles: ['ADMIN', 'COORDINADOR'] },
   { etiqueta: 'Reportes', ruta: '/reportes', icono: BarChart3, roles: ['ADMIN', 'COORDINADOR'] },
   { etiqueta: 'Auditoría', ruta: '/auditoria', icono: ShieldCheck, roles: ['ADMIN'] },

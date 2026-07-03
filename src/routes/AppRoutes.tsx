@@ -28,6 +28,9 @@ import { Notificaciones } from '../pages/Notificaciones';
 import { UsuariosList } from '../pages/admin/UsuariosList';
 import { RegistrarEspecialista } from '../pages/admin/RegistrarEspecialista';
 import { EditarUsuario } from '../pages/admin/EditarUsuario';
+import { CoordinadorSolicitudes } from '../pages/coordinador/CoordinadorSolicitudes';
+import { AsignarEspecialista } from '../pages/coordinador/AsignarEspecialista';
+import { CoordinadorEstudiantes } from '../pages/coordinador/CoordinadorEstudiantes';
 import { NotFound } from '../pages/NotFound';
 import { Unauthorized } from '../pages/Unauthorized';
 
@@ -94,6 +97,16 @@ export function AppRoutes() {
             <Route path="/usuarios" element={<UsuariosList />} />
             <Route path="/usuarios/nuevo-especialista" element={<RegistrarEspecialista />} />
             <Route path="/usuarios/:userId" element={<EditarUsuario />} />
+          </Route>
+
+          {/* Módulo exclusivo del coordinador: asignación de especialista a
+              solicitudes de estudiantes. Ver coordinadorMockService.ts —
+              datos simulados hasta que el backend exponga los endpoints
+              descritos en PEDIDO-PARA-GABO.md. */}
+          <Route element={<PrivateRoute rolesPermitidos={['COORDINADOR']} />}>
+            <Route path="/coordinador/solicitudes" element={<CoordinadorSolicitudes />} />
+            <Route path="/coordinador/solicitudes/:solicitudId/asignar" element={<AsignarEspecialista />} />
+            <Route path="/coordinador/estudiantes" element={<CoordinadorEstudiantes />} />
           </Route>
 
           {/* Agrega aquí /reportes y /auditoria en los próximos sprints.

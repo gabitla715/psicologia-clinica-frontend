@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import {
   fichaService,
@@ -8,17 +8,32 @@ import {
   COLOR_ESTADO_FICHA,
   NOMBRE_TIPO_PSICOLOGIA,
 } from '../../api/fichaService';
+import {
+  coordinadorMockService,
+  type SolicitudCoordinador,
+} from '../../api/coordinadorMockService';
 import { extraerMensajeError } from '../../api/client';
+import { CalendarCheck, CalendarX } from 'lucide-react';
 
 export function MiSolicitud() {
   const { usuario } = useAuth();
   const [ficha, setFicha] = useState<Ficha | null>(null);
+  const [solicitud, setSolicitud] = useState<SolicitudCoordinador | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [procesando, setProcesando] = useState(false);
+  const [mostrarRechazo, setMostrarRechazo] = useState(false);
+  const [motivoRechazo, setMotivoRechazo] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   // Tipo de psicología que el estudiante eligió al registrarse.
   // Se guardó en localStorage durante el registro (mapearPerfilBackendAUsuario).
   const tipoSolicitado: TipoPsicologia = usuario?.servicioInteres ?? 'GENERAL';
+
+  const cargarSolicitud = useCallback(() => {
+    if (!usuario) return;
+    coordinadorMockService.obtenerSolicitudDeEstudiante(usuario.id).then(setSolicitud);
+  }, [usuario]);
 
   useEffect(() => {
     if (!usuario) return;
@@ -39,10 +54,44 @@ export function MiSolicitud() {
         if (activo) setCargando(false);
       });
 
+    cargarSolicitud();
+
     return () => {
       activo = false;
     };
-  }, [usuario, tipoSolicitado]);
+  }, [usuario, tipoSolicitado, cargarSolicitud]);
+
+  async function aceptarAsignacion() {
+    if (!solicitud) return;
+    setProcesando(true);
+    setError(null);
+    try {
+      await coordinadorMockService.confirmarAsignacion(solicitud.id);
+      setAviso('Confirmaste tu cita. Te esperamos en la fecha y hora indicadas.');
+      cargarSolicitud();
+    } catch (err) {
+      setError(extraerMensajeError(err, 'No se pudo confirmar la cita.'));
+    } finally {
+      setProcesando(false);
+    }
+  }
+
+  async function rechazarAsignacion() {
+    if (!solicitud || !motivoRechazo.trim()) return;
+    setProcesando(true);
+    setError(null);
+    try {
+      await coordinadorMockService.rechazarYSolicitarReagenda(solicitud.id, motivoRechazo.trim());
+      setAviso('Se notificó al coordinador que necesitas otro horario. Te contactaremos pronto.');
+      setMostrarRechazo(false);
+      setMotivoRechazo('');
+      cargarSolicitud();
+    } catch (err) {
+      setError(extraerMensajeError(err, 'No se pudo enviar tu solicitud de reagenda.'));
+    } finally {
+      setProcesando(false);
+    }
+  }
 
   if (!usuario) return null;
 
@@ -131,6 +180,85 @@ export function MiSolicitud() {
           </div>
         )}
       </div>
+
+      {/* Asignación de especialista y horario (coordinador) */}
+      {solicitud && (solicitud.estado === 'ASIGNADA' || solicitud.estado === 'CONFIRMADA') && (
+        <div className="mt-6 rounded-xl border border-brand-200 bg-brand-50/40 p-6">
+          <h2 className="text-sm font-semibold text-brand-800">
+            {solicitud.estado === 'CONFIRMADA' ? 'Tu cita confirmada' : 'Se te asignó una cita — revisa y confirma'}
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Dato titulo="Especialista asignado" valor={solicitud.nombreEspecialistaAsignado ?? '—'} />
+            <Dato
+              titulo="Fecha y hora"
+              valor={
+                solicitud.fechaHoraPropuesta
+                  ? new Date(solicitud.fechaHoraPropuesta).toLocaleString('es-EC', {
+                      dateStyle: 'full',
+                      timeStyle: 'short',
+                    })
+                  : '—'
+              }
+            />
+          </div>
+
+          {solicitud.estado === 'ASIGNADA' && (
+            <>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  onClick={aceptarAsignacion}
+                  disabled={procesando}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  <CalendarCheck className="h-4 w-4" />
+                  Aceptar esta hora
+                </button>
+                <button
+                  onClick={() => setMostrarRechazo((v) => !v)}
+                  disabled={procesando}
+                  className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                >
+                  <CalendarX className="h-4 w-4" />
+                  No puedo, pedir otra hora
+                </button>
+              </div>
+
+              {mostrarRechazo && (
+                <div className="mt-4 rounded-lg border border-red-100 bg-white p-4">
+                  <label className="text-xs font-medium text-slate-600">
+                    Cuéntanos brevemente por qué necesitas otro horario:
+                  </label>
+                  <textarea
+                    value={motivoRechazo}
+                    onChange={(e) => setMotivoRechazo(e.target.value)}
+                    rows={2}
+                    className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                    placeholder="Ej: tengo clase a esa hora, ¿podría ser en la tarde?"
+                  />
+                  <button
+                    onClick={rechazarAsignacion}
+                    disabled={procesando || !motivoRechazo.trim()}
+                    className="btn-primary mt-3 px-4 py-2 text-sm disabled:opacity-50"
+                  >
+                    Enviar solicitud de reagenda
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {solicitud?.estado === 'RECHAZADA_ESTUDIANTE' && (
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+          Pediste reagendar tu cita. El coordinador está revisando la disponibilidad y te
+          asignará un nuevo horario pronto.
+        </div>
+      )}
+
+      {aviso && (
+        <p className="mt-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{aviso}</p>
+      )}
 
       {/* Información de contacto del estudiante */}
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">

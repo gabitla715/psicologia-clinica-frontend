@@ -1,6 +1,7 @@
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import type { ServicioPsicologico } from '../../types/auth';
+import { coordinadorMockService } from '../../api/coordinadorMockService';
 
 /**
  * Pantalla que aparece solo para estudiantes que aún no han elegido el servicio
@@ -32,6 +33,24 @@ export function ElegirServicio() {
       parsed.servicioInteres = servicio;
       localStorage.setItem('sesionUsuario', JSON.stringify(parsed));
     }
+
+    // Registra la solicitud en el "backend simulado" del coordinador
+    // (ver coordinadorMockService.ts) para que aparezca en su bandeja.
+    // No bloqueamos la navegación si esto falla: es un módulo de
+    // demostración, no debe romper el flujo real de elección de servicio.
+    coordinadorMockService
+      .crearSolicitud({
+        estudianteId: usuario.id,
+        nombreEstudiante: `${usuario.nombres} ${usuario.apellidos}`,
+        cedulaEstudiante: usuario.identificacion,
+        correoEstudiante: usuario.email,
+        carreraEstudiante: usuario.datosEstudiante?.carrera ?? 'No registrada',
+        tipoPsicologia: servicio,
+      })
+      .catch(() => {
+        /* silencioso: módulo de demostración */
+      });
+
     // Recargamos para que el AuthContext relea desde localStorage.
     window.location.href = '/mi-solicitud';
   }
