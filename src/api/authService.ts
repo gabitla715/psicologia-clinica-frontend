@@ -103,6 +103,27 @@ async function obtenerPerfilReal(): Promise<Usuario> {
   return mapearPerfilBackendAUsuario(perfil);
 }
 
+// Actualización de perfil del estudiante.
+// El backend (UserController.updateStudentProfile) SOLO permite editar
+// estos 4 campos: teléfono, dirección, semestre/paralelo y horario
+// académico. Correo, cédula, nombres/apellidos y carrera NO son
+// editables por este endpoint.
+export interface DatosPerfilEstudianteEditable {
+  telefono: string;
+  direccion: string;
+  semestre: string;
+  horarioAcademico: string;
+}
+
+async function actualizarPerfilEstudianteReal(datos: DatosPerfilEstudianteEditable): Promise<void> {
+  await apiClient.put('/users/me/student-profile', {
+    phone: datos.telefono,
+    address: datos.direccion,
+    term: datos.semestre,
+    academicSchedule: datos.horarioAcademico,
+  });
+}
+
 // Recuperación de contraseña
 async function solicitarRecuperacionReal(email: string): Promise<void> {
   await apiClient.post('/auth/forgot-password', { email });
@@ -194,6 +215,23 @@ export async function obtenerPerfil(): Promise<Usuario> {
     return JSON.parse(guardado) as Usuario;
   }
   return obtenerPerfilReal();
+}
+
+export async function actualizarPerfilEstudiante(datos: DatosPerfilEstudianteEditable): Promise<void> {
+  if (USAR_MOCK) {
+    const guardado = localStorage.getItem('sesionUsuario');
+    if (!guardado) throw new Error('Sin sesión');
+    const usuario = JSON.parse(guardado) as Usuario;
+    usuario.telefono = datos.telefono;
+    if (usuario.datosEstudiante) {
+      usuario.datosEstudiante.semestre = datos.semestre;
+      usuario.datosEstudiante.direccion = datos.direccion;
+      usuario.datosEstudiante.horarioAcademico = datos.horarioAcademico;
+    }
+    localStorage.setItem('sesionUsuario', JSON.stringify(usuario));
+    return;
+  }
+  await actualizarPerfilEstudianteReal(datos);
 }
 
 export async function solicitarRecuperacion(email: string): Promise<void> {

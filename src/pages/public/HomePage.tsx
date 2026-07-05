@@ -59,9 +59,11 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Un único llamado a la acción: ya no se elige el servicio aquí.
-              El estudiante se registra o ingresa, y elige el servicio dentro
-              de la plataforma (ElegirServicio.tsx, ya existente). */}
+          {/* Un único llamado a la acción: el servicio (General o Clínica) ya
+              no se elige aquí ni en una pantalla previa obligatoria. El
+              estudiante se registra o ingresa y, desde su panel ("Inicio"),
+              puede solicitar cualquiera de los dos servicios cuando quiera
+              (ver InicioEstudiante.tsx + ServiciosTabs.tsx). */}
           <div className="mt-10 flex flex-col items-center gap-4 rounded-2xl border border-brand-100 bg-white p-8 text-center shadow-sm sm:p-10">
             <p className="max-w-xl text-sm leading-relaxed text-slate-600">
               ¿Necesitas más información o quieres iniciar tu proceso de atención? Crea tu

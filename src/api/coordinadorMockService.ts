@@ -220,13 +220,37 @@ export const coordinadorMockService = {
 
   /**
    * Busca la solicitud más reciente de un estudiante (por su ID real de
-   * usuario). Usado por `MiSolicitud.tsx` para mostrarle al estudiante el
-   * estado de su propia solicitud/asignación.
+   * usuario). Usado por pantallas que muestran un solo proceso genérico.
    */
   async obtenerSolicitudDeEstudiante(estudianteId: number): Promise<SolicitudCoordinador | null> {
     const { solicitudes } = cargarEstado();
     const propias = solicitudes
       .filter((s) => s.estudianteId === estudianteId)
+      .sort((a, b) => new Date(b.fechaSolicitud).getTime() - new Date(a.fechaSolicitud).getTime());
+    return retardo(propias[0] ?? null);
+  },
+
+  /**
+   * Devuelve TODAS las solicitudes de un estudiante, sin importar el tipo
+   * de psicología. Permite que el estudiante tenga procesos independientes
+   * de Psicología General y Psicología Clínica al mismo tiempo.
+   */
+  async obtenerSolicitudesDeEstudiante(estudianteId: number): Promise<SolicitudCoordinador[]> {
+    const { solicitudes } = cargarEstado();
+    const propias = solicitudes
+      .filter((s) => s.estudianteId === estudianteId)
+      .sort((a, b) => new Date(b.fechaSolicitud).getTime() - new Date(a.fechaSolicitud).getTime());
+    return retardo(propias);
+  },
+
+  /** Busca la solicitud más reciente de un estudiante para un tipo de psicología específico. */
+  async obtenerSolicitudDeEstudiantePorTipo(
+    estudianteId: number,
+    tipo: TipoPsicologia
+  ): Promise<SolicitudCoordinador | null> {
+    const { solicitudes } = cargarEstado();
+    const propias = solicitudes
+      .filter((s) => s.estudianteId === estudianteId && s.tipoPsicologia === tipo)
       .sort((a, b) => new Date(b.fechaSolicitud).getTime() - new Date(a.fechaSolicitud).getTime());
     return retardo(propias[0] ?? null);
   },
@@ -266,10 +290,18 @@ export const coordinadorMockService = {
   /**
    * El coordinador asigna especialista + fecha/hora a una solicitud.
    * Simula el envío del correo al estudiante (ver notas en la UI).
+   *
+   * IMPORTANTE: `especialistaId` es el ID REAL del especialista (viene de
+   * `coordinadorEstudiantesService`, que consulta `/admin/users` del
+   * backend), no un ID de la lista falsa `estado.especialistas` de este
+   * archivo (esa lista de 4 especialistas hardcodeados era solo para una
+   * primera demo y ya no se usa desde la pantalla de asignación). Por eso
+   * el nombre se recibe como parámetro en vez de buscarlo internamente.
    */
   async asignarEspecialista(args: {
     solicitudId: number;
     especialistaId: number;
+    nombreEspecialista: string;
     fechaISO: string; // YYYY-MM-DD
     hora: string; // HH:mm
     motivo: string;
@@ -282,9 +314,6 @@ export const coordinadorMockService = {
     const solicitud = estado.solicitudes.find((s) => s.id === args.solicitudId);
     if (!solicitud) throw new Error('Solicitud no encontrada.');
 
-    const especialista = estado.especialistas.find((e) => e.id === args.especialistaId);
-    if (!especialista) throw new Error('Especialista no encontrado.');
-
     const fechaHoraPropuesta = `${args.fechaISO}T${args.hora}:00`;
 
     const yaOcupado = estado.bloquesOcupados.some(
@@ -293,19 +322,19 @@ export const coordinadorMockService = {
     if (yaOcupado) throw new Error('Ese horario ya fue asignado a otro estudiante.');
 
     solicitud.estado = 'ASIGNADA';
-    solicitud.especialistaAsignadoId = especialista.id;
-    solicitud.nombreEspecialistaAsignado = especialista.nombre;
+    solicitud.especialistaAsignadoId = args.especialistaId;
+    solicitud.nombreEspecialistaAsignado = args.nombreEspecialista;
     solicitud.fechaHoraPropuesta = fechaHoraPropuesta;
     solicitud.motivoAsignacion = args.motivo;
     solicitud.motivoRechazo = undefined;
     solicitud.historial.push({
       fecha: new Date().toISOString(),
       tipo: 'ASIGNADA',
-      detalle: `Asignado a ${especialista.nombre} el ${args.fechaISO} a las ${args.hora}. Motivo: ${args.motivo}`,
+      detalle: `Asignado a ${args.nombreEspecialista} el ${args.fechaISO} a las ${args.hora}. Motivo: ${args.motivo}`,
     });
 
     estado.bloquesOcupados.push({
-      especialistaId: especialista.id,
+      especialistaId: args.especialistaId,
       fechaHoraInicio: fechaHoraPropuesta,
       duracionMinutos: DURACION_BLOQUE_MIN,
       motivo: `Cita asignada — solicitud #${solicitud.id}`,
@@ -316,7 +345,7 @@ export const coordinadorMockService = {
     // ── Simulación de envío de correo al estudiante ──
     console.info(
       `[MOCK EMAIL] Para: ${solicitud.correoEstudiante} — ` +
-        `"Se te ha asignado con ${especialista.nombre} el ${args.fechaISO} a las ${args.hora}."`
+        `"Se te ha asignado con ${args.nombreEspecialista} el ${args.fechaISO} a las ${args.hora}."`
     );
 
     return retardo(solicitud);
@@ -368,7 +397,9 @@ export const coordinadorMockService = {
     return retardo(solicitud);
   },
 
-  /** Crea una nueva solicitud (simula lo que hoy hace ElegirServicio.tsx solo en localStorage propio). */
+  /** Crea una nueva solicitud para un tipo de servicio. Es idempotente: si el
+   *  estudiante ya tiene una solicitud activa de ese mismo tipo, devuelve la
+   *  existente en lugar de duplicarla (ver InicioEstudiante.tsx / ServiciosTabs.tsx). */
   async crearSolicitud(datos: {
     estudianteId: number;
     nombreEstudiante: string;

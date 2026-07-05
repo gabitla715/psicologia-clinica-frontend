@@ -9,6 +9,11 @@ import {
   LogOut,
   UserCog,
   GraduationCap,
+  Home,
+  CalendarCheck,
+  User,
+  FileClock,
+  LifeBuoy,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
@@ -30,7 +35,16 @@ interface ItemMenu {
 // perfil, así que antes veían "Especialista no encontrado" al entrar.
 const MENU: ItemMenu[] = [
   { etiqueta: 'Panel principal', ruta: '/dashboard', icono: LayoutDashboard, roles: ['ADMIN', 'PSICOLOGO', 'COORDINADOR'] },
-  { etiqueta: 'Mi solicitud', ruta: '/mi-solicitud', icono: ClipboardList, roles: ['ESTUDIANTE'] },
+
+  // Menú exclusivo del estudiante (rediseño solicitado): Inicio, Mi cita,
+  // Estado de mi solicitud, Mis datos, Historial y Ayuda.
+  { etiqueta: 'Inicio', ruta: '/mi-solicitud', icono: Home, roles: ['ESTUDIANTE'] },
+  { etiqueta: 'Mi cita', ruta: '/mi-cita', icono: CalendarCheck, roles: ['ESTUDIANTE'] },
+  { etiqueta: 'Estado de mi solicitud', ruta: '/estado-solicitud', icono: ClipboardList, roles: ['ESTUDIANTE'] },
+  { etiqueta: 'Mis datos', ruta: '/mis-datos', icono: User, roles: ['ESTUDIANTE'] },
+  { etiqueta: 'Historial de atenciones', ruta: '/historial', icono: FileClock, roles: ['ESTUDIANTE'] },
+  { etiqueta: 'Ayuda', ruta: '/ayuda', icono: LifeBuoy, roles: ['ESTUDIANTE'] },
+
   { etiqueta: 'Pacientes', ruta: '/pacientes', icono: ClipboardList, roles: ['PSICOLOGO'] },
   { etiqueta: 'Agenda de citas', ruta: '/citas', icono: CalendarDays, roles: ['PSICOLOGO'] },
   { etiqueta: 'Solicitudes', ruta: '/coordinador/solicitudes', icono: UserCog, roles: ['COORDINADOR'] },

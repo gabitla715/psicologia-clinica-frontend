@@ -392,8 +392,7 @@ export function EntrevistaInicialForm() {
 
               <p className="mt-3 text-[11px] leading-snug text-slate-400">
                 Este archivo se guarda solo en este dispositivo/navegador (IndexedDB) — el
-                backend todavía no tiene un endpoint de subida de archivos. Ver
-                PEDIDO-PARA-GABO.md.
+                backend todavía no tiene un endpoint de subida de archivos. 
               </p>
             </div>
           )}

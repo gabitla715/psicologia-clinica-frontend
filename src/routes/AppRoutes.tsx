@@ -9,8 +9,12 @@ import { ForgotPasswordPage } from '../pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from '../pages/auth/ResetPasswordPage';
 import { AppLayout } from '../components/layout/AppLayout';
 import { DashboardHome } from '../pages/dashboard/DashboardHome';
-import { MiSolicitud } from '../pages/estudiante/MiSolicitud';
-import { ElegirServicio } from '../pages/estudiante/ElegirServicio';
+import { InicioEstudiante } from '../pages/estudiante/InicioEstudiante';
+import { MiCita } from '../pages/estudiante/MiCita';
+import { EstadoSolicitud } from '../pages/estudiante/EstadoSolicitud';
+import { MisDatos } from '../pages/estudiante/MisDatos';
+import { HistorialAtenciones } from '../pages/estudiante/HistorialAtenciones';
+import { Ayuda } from '../pages/estudiante/Ayuda';
 import { MisPacientes } from '../pages/psicologo/MisPacientes';
 import { NuevaFicha } from '../pages/psicologo/NuevaFicha';
 import { DetalleFicha } from '../pages/psicologo/DetalleFicha';
@@ -48,10 +52,6 @@ export function AppRoutes() {
 
       <Route element={<PrivateRoute />}>
         <Route path="/cambiar-contrasena" element={<ChangePasswordPage />} />
-
-        <Route element={<PrivateRoute rolesPermitidos={['ESTUDIANTE']} />}>
-          <Route path="/elegir-servicio" element={<ElegirServicio />} />
-        </Route>
       </Route>
 
       <Route element={<PrivateRoute />}>
@@ -61,7 +61,16 @@ export function AppRoutes() {
           </Route>
 
           <Route element={<PrivateRoute rolesPermitidos={['ESTUDIANTE']} />}>
-            <Route path="/mi-solicitud" element={<MiSolicitud />} />
+            {/* "/mi-solicitud" es el destino directo del login/registro del
+                estudiante: ya no existe una pantalla previa de "elegir
+                servicio" — el estudiante entra directo a su panel y desde
+                ahí solicita Psicología General y/o Clínica cuando quiera. */}
+            <Route path="/mi-solicitud" element={<InicioEstudiante />} />
+            <Route path="/mi-cita" element={<MiCita />} />
+            <Route path="/estado-solicitud" element={<EstadoSolicitud />} />
+            <Route path="/mis-datos" element={<MisDatos />} />
+            <Route path="/historial" element={<HistorialAtenciones />} />
+            <Route path="/ayuda" element={<Ayuda />} />
           </Route>
 
 

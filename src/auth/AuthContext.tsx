@@ -17,6 +17,7 @@ interface AuthContextValue {
   registrarse: (datos: RegistroDatos) => Promise<ResultadoRegistro>;
   cerrarSesion: () => Promise<void>;
   marcarContrasenaActualizada: () => void;
+  refrescarPerfil: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -112,6 +113,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsuario(actualizado);
   }
 
+  /** Vuelve a pedir el perfil al backend (o localStorage en modo mock) y actualiza el contexto. */
+  async function refrescarPerfil() {
+    const perfil = await obtenerPerfilRequest();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(perfil));
+    setUsuario(perfil);
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -121,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         registrarse,
         cerrarSesion,
         marcarContrasenaActualizada,
+        refrescarPerfil,
       }}
     >
       {children}

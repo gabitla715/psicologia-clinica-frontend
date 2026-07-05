@@ -24,12 +24,9 @@ export function LoginPage() {
       const usuario = await iniciarSesion(values);
       const estado = location.state as { from?: { pathname: string } } | null;
 
-      // Estudiante sin servicio elegido → va a elegir servicio.
-      if (usuario.rol === 'ESTUDIANTE' && !usuario.servicioInteres) {
-        navigate(estado?.from?.pathname ?? '/elegir-servicio', { replace: true });
-        return;
-      }
-
+      // El estudiante ya no elige un único servicio al ingresar: entra
+      // directo a su panel y desde ahí puede solicitar Psicología General
+      // y/o Clínica cuando lo necesite (sección "Nuestros servicios").
       const destinoPorDefecto =
         usuario.rol === 'ESTUDIANTE' ? '/mi-solicitud' : '/dashboard';
       navigate(estado?.from?.pathname ?? destinoPorDefecto, { replace: true });

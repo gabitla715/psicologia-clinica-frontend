@@ -63,7 +63,7 @@ export function RegisterPage() {
 
       const resultado = await registrarse(datos);
       if (resultado.tipo === 'LISTO') {
-        navigate('/elegir-servicio', { replace: true });
+        navigate('/mi-solicitud', { replace: true });
       } else {
         setEmailRegistrado(resultado.email);
       }

@@ -93,6 +93,7 @@ export function AsignarEspecialista() {
       await coordinadorMockService.asignarEspecialista({
         solicitudId: solicitud.id,
         especialistaId: especialista.id,
+        nombreEspecialista: `${especialista.nombres} ${especialista.apellidos}`,
         fechaISO: fecha,
         hora,
         motivo: motivo.trim() || 'Asignación estándar por disponibilidad.',
