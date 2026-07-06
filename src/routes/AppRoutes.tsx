@@ -35,6 +35,7 @@ import { EditarUsuario } from '../pages/admin/EditarUsuario';
 import { CoordinadorSolicitudes } from '../pages/coordinador/CoordinadorSolicitudes';
 import { AsignarEspecialista } from '../pages/coordinador/AsignarEspecialista';
 import { CoordinadorEstudiantes } from '../pages/coordinador/CoordinadorEstudiantes';
+import { CoordinadorEspecialistas } from '../pages/coordinador/CoordinadorEspecialistas';
 import { NotFound } from '../pages/NotFound';
 import { Unauthorized } from '../pages/Unauthorized';
 
@@ -102,26 +103,36 @@ export function AppRoutes() {
           <Route path="/notificaciones" element={<Notificaciones />} />
 
 
-          <Route element={<PrivateRoute rolesPermitidos={['ADMIN', 'COORDINADOR']} />}>
+          {/* Gestión de cuentas (crear/editar/activar/desactivar) es
+              EXCLUSIVA de ADMIN. Antes también incluía a COORDINADOR:
+              se quitó por RBAC (ver PEDIDO-PARA-GABO-v3.md). El backend
+              hoy NO impide esto a nivel de API (AdminUserController
+              acepta ambos roles), así que esta restricción es solo de
+              frontend mientras se corrige el backend. */}
+          <Route element={<PrivateRoute rolesPermitidos={['ADMIN']} />}>
             <Route path="/usuarios" element={<UsuariosList />} />
             <Route path="/usuarios/nuevo-especialista" element={<RegistrarEspecialista />} />
             <Route path="/usuarios/:userId" element={<EditarUsuario />} />
           </Route>
 
-          {/* Módulo exclusivo del coordinador: asignación de especialista a
-              solicitudes de estudiantes. Ver coordinadorMockService.ts —
-              datos simulados hasta que el backend exponga los endpoints
-              descritos en PEDIDO-PARA-GABO.md. */}
+          {/* Módulo del coordinador: gestor operativo de atención
+              psicológica (solicitudes, asignación, consulta de solo
+              lectura de estudiantes/especialistas). Ya conectado al
+              backend real (solicitudService, coordinadorEstudiantesService,
+              horarioService) — ver notas en cada componente sobre los
+              gaps de backend pendientes. */}
           <Route element={<PrivateRoute rolesPermitidos={['COORDINADOR']} />}>
             <Route path="/coordinador/solicitudes" element={<CoordinadorSolicitudes />} />
             <Route path="/coordinador/solicitudes/:solicitudId/asignar" element={<AsignarEspecialista />} />
             <Route path="/coordinador/estudiantes" element={<CoordinadorEstudiantes />} />
+            <Route path="/coordinador/especialistas" element={<CoordinadorEspecialistas />} />
           </Route>
 
-          {/* Agrega aquí /reportes y /auditoria en los próximos sprints.
-              Nota: /auditoria no se implementó en Sprint F porque
-              SecurityAuditLogEntity no está expuesto por ningún
-              controlador REST del backend (ver INSTRUCCIONES.md). */}
+          {/* /reportes: NO implementado todavía (no existía ni siquiera
+              como página — era un ítem de menú sin ruta). Ver Fase 5
+              pendiente en el plan de trabajo.
+              /auditoria: no implementado porque SecurityAuditLogEntity
+              no está expuesto por ningún controlador REST del backend. */}
         </Route>
       </Route>
 

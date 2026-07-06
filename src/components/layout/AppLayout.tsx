@@ -4,11 +4,11 @@ import {
   ClipboardList,
   CalendarDays,
   Users,
-  BarChart3,
   ShieldCheck,
   LogOut,
   UserCog,
   GraduationCap,
+  Stethoscope,
   Home,
   CalendarCheck,
   User,
@@ -44,13 +44,12 @@ const MENU: ItemMenu[] = [
   { etiqueta: 'Mis datos', ruta: '/mis-datos', icono: User, roles: ['ESTUDIANTE'] },
   { etiqueta: 'Historial de atenciones', ruta: '/historial', icono: FileClock, roles: ['ESTUDIANTE'] },
   { etiqueta: 'Ayuda', ruta: '/ayuda', icono: LifeBuoy, roles: ['ESTUDIANTE'] },
-
   { etiqueta: 'Pacientes', ruta: '/pacientes', icono: ClipboardList, roles: ['PSICOLOGO'] },
   { etiqueta: 'Agenda de citas', ruta: '/citas', icono: CalendarDays, roles: ['PSICOLOGO'] },
   { etiqueta: 'Solicitudes', ruta: '/coordinador/solicitudes', icono: UserCog, roles: ['COORDINADOR'] },
   { etiqueta: 'Estudiantes', ruta: '/coordinador/estudiantes', icono: GraduationCap, roles: ['COORDINADOR'] },
-  { etiqueta: 'Usuarios', ruta: '/usuarios', icono: Users, roles: ['ADMIN', 'COORDINADOR'] },
-  { etiqueta: 'Reportes', ruta: '/reportes', icono: BarChart3, roles: ['ADMIN', 'COORDINADOR'] },
+  { etiqueta: 'Especialistas', ruta: '/coordinador/especialistas', icono: Stethoscope, roles: ['COORDINADOR'] },
+  { etiqueta: 'Usuarios', ruta: '/usuarios', icono: Users, roles: ['ADMIN'] },
   { etiqueta: 'Auditoría', ruta: '/auditoria', icono: ShieldCheck, roles: ['ADMIN'] },
 ];
 
