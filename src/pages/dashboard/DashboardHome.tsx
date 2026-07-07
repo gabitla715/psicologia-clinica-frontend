@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users,
@@ -9,13 +9,17 @@ import {
   ClipboardList,
   CalendarClock,
   CalendarCheck2,
+  ClipboardCheck,
+  FolderCheck,
   ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { adminUserService } from '../../api/adminUserService';
 import { pacienteService } from '../../api/pacienteService';
 import { citaService, esProxima } from '../../api/citaService';
+import { consentimientoService } from '../../api/consentimientoService';
 import { extraerMensajeError } from '../../api/client';
+import { mockAsignacionCita, type AsignacionExtra } from '../../mocks/mockContratoBackend';
 
 export function DashboardHome() {
   const { usuario } = useAuth();
@@ -135,31 +139,58 @@ function PanelAdministrativo() {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Panel para PSICOLOGO: resumen de pacientes y próximas citas.
+// Panel para PSICOLOGO: 6 indicadores + estudiantes designados
+// pendientes de ficha (en vez de la lista de próximas citas, que ahora
+// vive en la Agenda y en la tabla "Casos asignados" de /pacientes).
 // ────────────────────────────────────────────────────────────────
 function PanelPsicologo() {
+  const { usuario } = useAuth();
+  const especialistaId = usuario?.datosEspecialista?.id;
+
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [totalActivas, setTotalActivas] = useState(0);
-  const [totalPacientes, setTotalPacientes] = useState(0);
-  const [proximasCitas, setProximasCitas] = useState<
-    Array<{ id: number; nombreEstudiante: string; fechaHora: Date }>
-  >([]);
+  const [kpis, setKpis] = useState({
+    totalPacientes: 0,
+    casosActivos: 0,
+    casosCerrados: 0,
+    citasHoy: 0,
+    proximasCitas: 0,
+    consentimientosPendientes: 0,
+  });
+  const [designados, setDesignados] = useState<AsignacionExtra[]>([]);
 
   useEffect(() => {
     let activo = true;
     Promise.all([pacienteService.listarMisPacientes(), citaService.listarMisCitas()])
-      .then(([pacientes, citas]) => {
+      .then(async ([pacientes, citas]) => {
         if (!activo) return;
-        setTotalPacientes(pacientes.length);
-        setTotalActivas(pacientes.filter((p) => p.estado === 'ACTIVA').length);
-        setProximasCitas(
-          citas
-            .filter(esProxima)
-            .sort((a, b) => a.fechaHora.getTime() - b.fechaHora.getTime())
-            .slice(0, 4)
-            .map((c) => ({ id: c.id, nombreEstudiante: c.nombreEstudiante, fechaHora: c.fechaHora }))
+
+        const hoy = new Date();
+        const activas = pacientes.filter((p) => p.estado === 'ACTIVA');
+        const cerradas = pacientes.filter((p) => p.estado !== 'ACTIVA');
+        const citasHoy = citas.filter(
+          (c) => c.fechaHora.toDateString() === hoy.toDateString() && c.estado !== 'CANCELADA'
         );
+
+        // Consentimientos pendientes: solo tiene sentido para casos activos.
+        const consentimientos = await Promise.all(
+          activas.map((p) => consentimientoService.obtenerPorFicha(p.id).catch(() => null))
+        );
+        const pendientes = consentimientos.filter((c) => c === null).length;
+
+        if (!activo) return;
+        setKpis({
+          totalPacientes: pacientes.length,
+          casosActivos: activas.length,
+          casosCerrados: cerradas.length,
+          citasHoy: citasHoy.length,
+          proximasCitas: citas.filter(esProxima).length,
+          consentimientosPendientes: pendientes,
+        });
+
+        if (especialistaId) {
+          setDesignados(mockAsignacionCita.listarDesignadosSinFicha(especialistaId));
+        }
       })
       .catch((err) => {
         if (activo) setError(extraerMensajeError(err, 'No se pudieron cargar tus indicadores.'));
@@ -170,19 +201,7 @@ function PanelPsicologo() {
     return () => {
       activo = false;
     };
-  }, []);
-
-  const formatoFecha = useMemo(
-    () =>
-      new Intl.DateTimeFormat('es-EC', {
-        weekday: 'short',
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    []
-  );
+  }, [especialistaId]);
 
   return (
     <div className="mt-6 space-y-6">
@@ -190,64 +209,59 @@ function PanelPsicologo() {
         <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <TarjetaKpi
-          icono={ClipboardList}
-          titulo="Total de pacientes"
-          valor={cargando ? '—' : totalPacientes}
-          color="brand"
-        />
-        <TarjetaKpi
-          icono={UserCheck}
-          titulo="Casos activos"
-          valor={cargando ? '—' : totalActivas}
-          color="emerald"
-        />
-        <TarjetaKpi
-          icono={CalendarCheck2}
-          titulo="Próximas citas"
-          valor={cargando ? '—' : proximasCitas.length}
-          color="blue"
-        />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <TarjetaKpi icono={ClipboardList} titulo="Total pacientes asignados" valor={cargando ? '—' : kpis.totalPacientes} color="brand" />
+        <TarjetaKpi icono={UserCheck} titulo="Casos activos" valor={cargando ? '—' : kpis.casosActivos} color="emerald" />
+        <TarjetaKpi icono={FolderCheck} titulo="Casos cerrados" valor={cargando ? '—' : kpis.casosCerrados} color="blue" />
+        <TarjetaKpi icono={CalendarClock} titulo="Citas de hoy" valor={cargando ? '—' : kpis.citasHoy} color="brand" />
+        <TarjetaKpi icono={CalendarCheck2} titulo="Próximas citas" valor={cargando ? '—' : kpis.proximasCitas} color="blue" />
+        <TarjetaKpi icono={ClipboardCheck} titulo="Consentimientos pendientes" valor={cargando ? '—' : kpis.consentimientosPendientes} color="rose" />
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <p className="text-sm font-semibold text-slate-800">Próximas citas</p>
+          <p className="text-sm font-semibold text-slate-800">Estudiantes designados</p>
           <Link
-            to="/citas"
+            to="/pacientes"
             className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
           >
-            Ver agenda completa <ArrowRight className="h-3.5 w-3.5" />
+            Ver todos los casos <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
         {cargando ? (
           <p className="px-5 py-6 text-sm text-slate-500">Cargando…</p>
-        ) : proximasCitas.length === 0 ? (
-          <p className="px-5 py-6 text-sm text-slate-500">No tienes citas próximas agendadas.</p>
+        ) : designados.length === 0 ? (
+          <p className="px-5 py-6 text-sm text-slate-500">
+            No tienes estudiantes designados pendientes de ficha.
+          </p>
         ) : (
           <ul className="divide-y divide-slate-100">
-            {proximasCitas.map((c) => (
-              <li key={c.id} className="flex items-center justify-between px-5 py-3">
+            {designados.slice(0, 5).map((d) => (
+              <li key={d.solicitudId} className="flex items-center justify-between px-5 py-3">
                 <div className="flex items-center gap-3">
-                  <CalendarClock className="h-4 w-4 text-brand-600" />
-                  <span className="text-sm font-medium text-slate-700">{c.nombreEstudiante}</span>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700">
+                    {d.solicitud.nombreEstudiante.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">{d.solicitud.nombreEstudiante}</p>
+                    <p className="text-xs text-slate-500">
+                      {d.solicitud.tipoPsicologia === 'CLINICA' ? 'Psicología Clínica' : 'Psicología General'}
+                    </p>
+                  </div>
                 </div>
-                <span className="text-xs text-slate-500">
-                  {formatoFecha.format(c.fechaHora)}
-                </span>
+                <Link
+                  to={`/pacientes/nuevo?estudianteId=${d.solicitud.estudianteId}&solicitudId=${d.solicitudId}&nombre=${encodeURIComponent(
+                    d.solicitud.nombreEstudiante
+                  )}&tipo=${d.solicitud.tipoPsicologia}`}
+                  className="shrink-0 rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-800"
+                >
+                  Abrir ficha
+                </Link>
               </li>
             ))}
           </ul>
         )}
       </div>
-
-      <TarjetaAcceso
-        icono={ClipboardList}
-        titulo="Abrir nueva ficha"
-        descripcion="Inicia formalmente el proceso de atención de un estudiante."
-        ruta="/pacientes/nuevo"
-      />
     </div>
   );
 }

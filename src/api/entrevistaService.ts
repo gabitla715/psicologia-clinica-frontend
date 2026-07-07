@@ -160,8 +160,18 @@ function mapearEntrevista(b: EntrevistaInicialResponseBackend): EntrevistaInicia
   };
 }
 
-function esNotFound(err: unknown): boolean {
-  return (err as { response?: { status?: number } })?.response?.status === 404;
+// ⚠️ Bug real de backend (verificado): GestionarEntrevistaUseCase.obtenerPorFicha
+// lanza IllegalArgumentException cuando no existe entrevista para la ficha,
+// y GlobalExceptionHandler mapea TODO IllegalArgumentException a 400 Bad
+// Request — aunque el Swagger de este mismo endpoint documenta 404. Por eso
+// no basta con revisar el status 404; también se reconoce este 400 puntual
+// por su mensaje. Pedido de backend: que el caso de uso lance una excepción
+// distinta (ej. EntrevistaNoEncontradaException) mapeada a 404 real.
+function esEntrevistaNoEncontrada(err: unknown): boolean {
+  const respuesta = (err as { response?: { status?: number; data?: { message?: string } } })?.response;
+  if (respuesta?.status === 404) return true;
+  if (respuesta?.status === 400 && respuesta.data?.message?.includes('No existe entrevista')) return true;
+  return false;
 }
 
 // ─── Servicio ───────────────────────────────────────────────────
@@ -189,7 +199,7 @@ export const entrevistaService = {
       );
       return mapearEntrevista(data);
     } catch (err) {
-      if (esNotFound(err)) return null;
+      if (esEntrevistaNoEncontrada(err)) return null;
       throw err;
     }
   },

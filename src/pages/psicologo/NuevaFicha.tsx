@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Search, CheckCircle2 } from 'lucide-react';
 import {
   fichaService,
   type TipoPsicologia,
   NOMBRE_TIPO_PSICOLOGIA,
   type CrearFichaRequestBackend,
 } from '../../api/fichaService';
+import { estudianteBusquedaService, type EstudianteEncontrado } from '../../api/estudianteBusquedaService';
+import { mockAsignacionCita } from '../../mocks/mockContratoBackend';
 import { extraerMensajeError } from '../../api/client';
 
 interface FormularioFicha {
@@ -42,10 +45,49 @@ const PASOS = [
 
 export function NuevaFicha() {
   const navegar = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Si venimos de la lista de "Casos asignados" (un estudiante ya
+  // designado por el coordinador), el estudianteId real ya se conoce y
+  // no debe pedirse a mano. Ver MisPacientes.tsx / mockAsignacionCita.
+  const estudianteIdPrefill = searchParams.get('estudianteId');
+  const solicitudIdPrefill = searchParams.get('solicitudId');
+  const nombrePrefill = searchParams.get('nombre');
+  const tipoPrefill = searchParams.get('tipo') as TipoPsicologia | null;
+  const vieneDeDesignado = !!estudianteIdPrefill;
+
   const [paso, setPaso] = useState(1);
-  const [form, setForm] = useState<FormularioFicha>(ESTADO_INICIAL);
+  const [form, setForm] = useState<FormularioFicha>({
+    ...ESTADO_INICIAL,
+    estudianteId: estudianteIdPrefill ?? '',
+    tipo: tipoPrefill ?? ESTADO_INICIAL.tipo,
+  });
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  // ─── Búsqueda por cédula (respaldo cuando el estudiante no viene de
+  // la lista de designados). Ver estudianteBusquedaService.ts: llama al
+  // endpoint real pendiente en el backend; si falla, cae a ID manual.
+  const [cedula, setCedula] = useState('');
+  const [buscandoEstudiante, setBuscandoEstudiante] = useState(false);
+  const [estudianteEncontrado, setEstudianteEncontrado] = useState<EstudianteEncontrado | null>(null);
+  const [busquedaSinResultado, setBusquedaSinResultado] = useState(false);
+  const [mostrarIdManual, setMostrarIdManual] = useState(false);
+
+  async function buscarEstudiante() {
+    if (!cedula.trim()) return;
+    setBuscandoEstudiante(true);
+    setBusquedaSinResultado(false);
+    setEstudianteEncontrado(null);
+    const encontrado = await estudianteBusquedaService.buscarPorCedula(cedula);
+    setBuscandoEstudiante(false);
+    if (encontrado) {
+      setEstudianteEncontrado(encontrado);
+      actualizar('estudianteId', String(encontrado.estudianteId));
+    } else {
+      setBusquedaSinResultado(true);
+    }
+  }
 
   function actualizar<K extends keyof FormularioFicha>(campo: K, valor: FormularioFicha[K]) {
     setForm((f) => ({ ...f, [campo]: valor }));
@@ -102,7 +144,10 @@ export function NuevaFicha() {
         tipo: form.tipo,
         datos,
       });
-      navegar(`/pacientes/${ficha.id}`, { replace: true });
+      if (solicitudIdPrefill) {
+        mockAsignacionCita.vincularFicha(Number(solicitudIdPrefill), ficha.id);
+      }
+      navegar(`/pacientes/${ficha.id}/entrevista`, { replace: true });
     } catch (err) {
       setError(extraerMensajeError(err, 'No se pudo crear la ficha.'));
     } finally {
@@ -151,7 +196,20 @@ export function NuevaFicha() {
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6">
         {paso === 1 && (
-          <Paso1 form={form} actualizar={actualizar} />
+          <Paso1
+            form={form}
+            actualizar={actualizar}
+            vieneDeDesignado={vieneDeDesignado}
+            nombrePrefill={nombrePrefill}
+            cedula={cedula}
+            setCedula={setCedula}
+            buscandoEstudiante={buscandoEstudiante}
+            estudianteEncontrado={estudianteEncontrado}
+            busquedaSinResultado={busquedaSinResultado}
+            mostrarIdManual={mostrarIdManual}
+            setMostrarIdManual={setMostrarIdManual}
+            buscarEstudiante={buscarEstudiante}
+          />
         )}
         {paso === 2 && (
           <Paso2 form={form} actualizar={actualizar} />
@@ -206,27 +264,124 @@ interface PasoProps {
   actualizar: <K extends keyof FormularioFicha>(campo: K, valor: FormularioFicha[K]) => void;
 }
 
-function Paso1({ form, actualizar }: PasoProps) {
+interface Paso1Props extends PasoProps {
+  vieneDeDesignado: boolean;
+  nombrePrefill: string | null;
+  cedula: string;
+  setCedula: (v: string) => void;
+  buscandoEstudiante: boolean;
+  estudianteEncontrado: EstudianteEncontrado | null;
+  busquedaSinResultado: boolean;
+  mostrarIdManual: boolean;
+  setMostrarIdManual: (v: boolean) => void;
+  buscarEstudiante: () => void;
+}
+
+function Paso1({
+  form,
+  actualizar,
+  vieneDeDesignado,
+  nombrePrefill,
+  cedula,
+  setCedula,
+  buscandoEstudiante,
+  estudianteEncontrado,
+  busquedaSinResultado,
+  mostrarIdManual,
+  setMostrarIdManual,
+  buscarEstudiante,
+}: Paso1Props) {
   return (
     <div className="space-y-4">
       <Encabezado titulo="Identificación del caso" />
 
-      <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        <strong>Nota:</strong> el ID del estudiante lo asigna el coordinador del Área de
-        Bienestar Estudiantil al momento de la derivación. Si no lo tienes a mano,
-        consúltalo antes de continuar.
-      </div>
+      {vieneDeDesignado ? (
+        <div className="flex items-center gap-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-semibold text-emerald-700">
+            {(nombrePrefill ?? '?').charAt(0)}
+          </div>
+          <div>
+            <p className="font-medium">{nombrePrefill ?? 'Estudiante designado'}</p>
+            <p className="text-xs text-emerald-700/80">
+              Estudiante confirmado desde tu lista de casos asignados.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <Campo etiqueta="Buscar estudiante por cédula" obligatorio>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={cedula}
+                onChange={(e) => setCedula(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    buscarEstudiante();
+                  }
+                }}
+                placeholder="Ej. 1712345678"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+              <button
+                type="button"
+                onClick={buscarEstudiante}
+                disabled={buscandoEstudiante || !cedula.trim()}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-60"
+              >
+                <Search className="h-4 w-4" />
+                {buscandoEstudiante ? 'Buscando…' : 'Buscar'}
+              </button>
+            </div>
+          </Campo>
 
-      <Campo etiqueta="ID del estudiante" obligatorio>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={form.estudianteId}
-          onChange={(e) => actualizar('estudianteId', e.target.value)}
-          placeholder="Ej. 42"
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-        />
-      </Campo>
+          {estudianteEncontrado && (
+            <div className="flex items-center gap-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+              <div>
+                <p className="font-medium">
+                  {estudianteEncontrado.nombres} {estudianteEncontrado.apellidos}
+                </p>
+                <p className="text-xs text-emerald-700/80">
+                  Cédula {estudianteEncontrado.identificacion}
+                  {estudianteEncontrado.carrera ? ` · ${estudianteEncontrado.carrera}` : ''}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!estudianteEncontrado && (busquedaSinResultado || mostrarIdManual) && (
+            <>
+              <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                No se encontró un estudiante con esa cédula. Puedes ingresar su ID
+                directamente si lo tienes a mano.
+              </div>
+              <Campo etiqueta="ID del estudiante" obligatorio>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={form.estudianteId}
+                  onChange={(e) => actualizar('estudianteId', e.target.value)}
+                  placeholder="Ej. 42"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </Campo>
+            </>
+          )}
+
+          {!estudianteEncontrado && !busquedaSinResultado && !mostrarIdManual && (
+            <button
+              type="button"
+              onClick={() => setMostrarIdManual(true)}
+              className="text-xs font-medium text-slate-500 hover:text-brand-700 hover:underline"
+            >
+              Ingresar el ID del estudiante directamente
+            </button>
+          )}
+        </>
+      )}
 
       <Campo etiqueta="Tipo de servicio" obligatorio>
         <div className="grid gap-2 sm:grid-cols-2">

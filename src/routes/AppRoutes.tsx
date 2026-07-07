@@ -17,7 +17,7 @@ import { HistorialAtenciones } from '../pages/estudiante/HistorialAtenciones';
 import { Ayuda } from '../pages/estudiante/Ayuda';
 import { MisPacientes } from '../pages/psicologo/MisPacientes';
 import { NuevaFicha } from '../pages/psicologo/NuevaFicha';
-import { DetalleFicha } from '../pages/psicologo/DetalleFicha';
+import { ExpedienteClinico } from '../pages/psicologo/ExpedienteClinico';
 import { EntrevistaInicialForm } from '../pages/psicologo/EntrevistaInicialForm';
 import { ConsentimientoForm } from '../pages/psicologo/ConsentimientoForm';
 import { PlanIntervencionForm } from '../pages/psicologo/PlanIntervencionForm';
@@ -77,7 +77,7 @@ export function AppRoutes() {
 
           <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO']} />}>
             <Route path="/pacientes" element={<MisPacientes />} />
-            <Route path="/pacientes/:fichaId" element={<DetalleFicha />} />
+            <Route path="/pacientes/:fichaId" element={<ExpedienteClinico />} />
             <Route path="/pacientes/:fichaId/sesiones" element={<HistorialSesiones />} />
           </Route>
           <Route element={<PrivateRoute rolesPermitidos={['PSICOLOGO']} />}>

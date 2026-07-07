@@ -72,7 +72,7 @@ export function AsignarEspecialista() {
         if (registroExistente) {
           setSolicitud({
             id,
-            estudianteId: 0,
+            estudianteId: registroExistente.solicitud.estudianteId,
             nombreEstudiante: registroExistente.solicitud.nombreEstudiante,
             tipoPsicologia: registroExistente.solicitud.tipoPsicologia,
             motivoSolicitud: registroExistente.solicitud.motivoSolicitud,
@@ -134,6 +134,7 @@ export function AsignarEspecialista() {
         especialistaSeleccionado.id,
         `${especialistaSeleccionado.nombres} ${especialistaSeleccionado.apellidos}`,
         {
+          estudianteId: solicitud.estudianteId,
           nombreEstudiante: solicitud.nombreEstudiante,
           tipoPsicologia: solicitud.tipoPsicologia,
           motivoSolicitud: solicitud.motivoSolicitud,
